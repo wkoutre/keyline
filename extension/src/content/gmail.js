@@ -97,7 +97,7 @@ window.InboxKeys = window.InboxKeys || {};
     threadFallback: '[role="main"] [role="listitem"] .gE, [role="main"] .a3s',
     // app chrome
     main: '[role="main"]',
-    composeButton: '[gh="cm"], [role="button"][gh="cm"]',
+    composeButton: '[gh="cm"], [role="button"].T-I-KE',
     toolbars: '[gh="tm"], [gh="mtb"], [role="toolbar"]',
     searchInput: 'input[aria-label="Search mail"], input[name="q"]',
     composeBody: 'div[aria-label="Message Body"], div[g_editable="true"], [contenteditable="true"][role="textbox"]',
@@ -449,7 +449,7 @@ window.InboxKeys = window.InboxKeys || {};
   function compose() {
     const btn = document.querySelector(SEL.composeButton);
     if (btn && isVisible(btn)) {
-      btn.click();
+      realClick(btn);
       return true;
     }
     // Fallback: Gmail compose deep-link.

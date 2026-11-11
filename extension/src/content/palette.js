@@ -121,9 +121,19 @@ window.InboxKeys = window.InboxKeys || {};
   // command; with a query, commands plus labels and people on screen (recent
   // ones ranked a little higher), then a "Search mail for …" row last.
   function candidates(q) {
+    const text = (cmd) => title(cmd) + " " + (cmd.searchText || "") + " " + (cmd.group || "");
+    // Jump rows (labels, people) are many and long, so scattered-letter matches
+    // against "Go to label: …" / "Conversations with …" would bury real hits.
+    // They match only on their own name, and only as a contiguous substring.
+    const jumpScore = (cmd) => {
+      const t = String(cmd.matchText || "").toLowerCase();
+      const at = t.indexOf(q.toLowerCase());
+      if (at < 0) return 0;
+      return score(q, t) + (at === 0 || /[\s@._-]/.test(t[at - 1]) ? 4 : 0);
+    };
     const rank = (pool, boost) =>
       pool
-        .map((cmd) => ({ cmd, s: score(q, title(cmd) + " " + (cmd.searchText || "") + " " + (cmd.group || "")) }))
+        .map((cmd) => ({ cmd, s: cmd.matchText != null ? jumpScore(cmd) : score(q, text(cmd)) }))
         .filter((x) => x.s > 0)
         .map((x) => (boost && boost.has(x.cmd.id) ? { cmd: x.cmd, s: x.s + 3 } : x))
         .sort((a, b) => b.s - a.s)
@@ -138,7 +148,12 @@ window.InboxKeys = window.InboxKeys || {};
     }
     const jump = (commands.jumpCommands ? commands.jumpCommands() : []).filter(here);
     const tail = commands.queryCommands ? commands.queryCommands(q) : [];
-    return [...rank([...registry, ...jump], new Set(recent.map((c) => c.id))), ...tail];
+    const ranked = rank([...registry, ...jump], new Set(recent.map((c) => c.id)));
+    // When nothing contains the query as typed, the hits are only fuzzy
+    // guesses: lead with "Search mail for …" so Enter runs the search.
+    const lq = q.toLowerCase();
+    const strong = ranked.some((c) => (c.matchText != null ? c.matchText : text(c)).toLowerCase().includes(lq));
+    return strong ? [...ranked, ...tail] : [...tail, ...ranked];
   }
 
   function render(keepQuery) {

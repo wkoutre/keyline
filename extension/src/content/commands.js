@@ -349,14 +349,14 @@ window.InboxKeys = window.InboxKeys || {};
   // every person on screen. Offered when the palette has a query, so the
   // default (empty) palette stays a short command list.
   function jumpCommands() {
-    const labels = gmail.navLabels().map((l) => hashRow("label:" + l.name, "Go to label: " + l.name, "Labels", l.hash));
+    const labels = gmail.navLabels().map((l) => hashRow("label:" + l.name, "Go to label: " + l.name, "Labels", l.hash, { matchText: l.name }));
     const people = gmail.visiblePeople().map((p) =>
       hashRow(
         "person:" + p.email.toLowerCase(),
         "Conversations with " + p.name,
         "People",
         "search/" + encodeURIComponent(`from:${p.email} OR to:${p.email}`),
-        { hint: p.name === p.email ? "" : p.email, searchText: p.email }
+        { hint: p.name === p.email ? "" : p.email, searchText: p.email, matchText: p.name + " " + p.email }
       )
     );
     return [...labels, ...people];

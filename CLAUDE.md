@@ -131,7 +131,7 @@ tr.zA                              a list row
 .ams (classes bkH, bkG)            inline action links: "Reply", "Forward"
 [aria-label="Type of response"]    the open reply's reply-type caret
 [role="menuitem"] / .J-N           menu items (plain text, no aria-label)
-[gh="cm"]                          compose button
+[gh="cm"], [role="button"].T-I-KE    compose button (gh="cm" gone live Nov 2026)
 [gh="tm"]                          toolbar
 input[aria-label="Search mail"], input[name="q"]   the search box
 ```

@@ -2130,6 +2130,22 @@ function wireInlineActions(w, opts = {}) {
   assert.equal(rowProbe.count >= 2, true, "probe results carry visible-match counts");
 }
 
+// Live regression (Dia, Nov 2026): Gmail's Compose button lost gh="cm" and is
+// now div.T-I.T-I-KE.L3[role=button]. The probe must find it and compose()
+// must click it rather than falling back to the deep link.
+{
+  const w = load(listFixture().replace(/^/, '<div class="T-I T-I-KE L3" role="button" tabindex="0">Compose</div>'), "#inbox");
+  w.InboxKeys.toast = () => {};
+  w.console = { table: () => {} };
+  const out = w.InboxKeys.gmail.verifySelectors();
+  assert.equal(out.failed.some((f) => f.probe === "compose button"), false, "current Compose markup passes the probe");
+  let clicked = 0;
+  w.document.querySelector(".T-I-KE").addEventListener("click", () => clicked++);
+  w.InboxKeys.gmail.compose();
+  assert.equal(clicked, 1, "compose() clicks the real Compose button");
+  assert.equal(w.location.hash, "#inbox", "no deep-link fallback when the button exists");
+}
+
 // Once the account list is known (the MAIN-world bridge enumerated it into
 // accountNames), the palette shows EXACTLY those accounts, every row by email —
 // no "account u/N" placeholders for slots that don't correspond to a real account.

@@ -428,9 +428,39 @@ function paletteRows(w) {
 
     press(w, "k", { target: w.document.body, metaKey: true });
     typeInPalette(w, "invoice march");
-    Array.from(w.document.querySelectorAll(".inboxkeys-row")).pop().click();
+    Array.from(w.document.querySelectorAll(".inboxkeys-row")).find((r) => /Search mail for/.test(r.textContent)).click();
     await tick(50);
     assert.equal(w.location.hash, "#search/" + encodeURIComponent("invoice march"), "the search row runs a Gmail search");
+  }
+
+  // Live regression (Dia, Nov 2026): scattered-letter matches against the
+  // "Go to label: …" / "Conversations with …" wording outranked real hits.
+  // "toby" listed unrelated labels above Toby, and "invoice" + Enter opened a
+  // person instead of searching.
+  {
+    const html = listHtml(["toby"]).replace(
+      "</div>\n    <input",
+      '<a href="https://mail.google.com/mail/u/0/#label/Yearly" aria-label="Yearly">Yearly</a></div>\n    <input'
+    );
+    const w = load(html);
+    press(w, "k", { target: w.document.body, metaKey: true });
+    typeInPalette(w, "toby");
+    const titles = paletteRows(w);
+    assert.equal(titles[0], "Conversations with Toby", "the person whose name was typed comes first");
+    assert.equal(titles.some((t) => /^Go to label/.test(t)), false, "labels don't match on their 'Go to label' wording");
+    typeInPalette(w, "year");
+    assert.equal(paletteRows(w)[0], "Go to label: Yearly", "labels still match on their own name");
+  }
+  {
+    const w = load(listHtml([]).replace("<tbody>", `<tbody>${row("x", [["me@x.com", "me"], ["ice@x.org", "Ian Voigt"]])}`));
+    press(w, "k", { target: w.document.body, metaKey: true });
+    typeInPalette(w, "invoice");
+    const titles = paletteRows(w);
+    assert.equal(titles.includes("Conversations with Ian Voigt"), false, "no scattered-letter person match");
+    assert.equal(titles[0], 'Search mail for "invoice"', "with no real hit, the search row leads");
+    press(w, "Enter", { target: w.document.querySelector(".inboxkeys-input") });
+    await tick(50);
+    assert.equal(w.location.hash, "#search/invoice", "Enter runs the search");
   }
 
   // Recents: the last run rows lead the empty palette, newest first, and a
