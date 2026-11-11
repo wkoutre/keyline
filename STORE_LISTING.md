@@ -40,7 +40,7 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
   - Host permission `https://calendar.google.com/*`: Content scripts add the calendar palette and shortcuts to Google Calendar.
 - **Remote code:** No, I am not using remote code.
 - **Data usage:** check nothing in the "collects" list, then tick all three certifications (no selling data, no unrelated use, no creditworthiness use).
-- **Privacy policy URL:** `https://github.com/<you>/keyline/blob/main/PRIVACY.md`
+- **Privacy policy URL:** `https://github.com/wkoutre/keyline/blob/main/PRIVACY.md`
 
 ## Distribution tab
 
