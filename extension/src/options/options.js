@@ -31,6 +31,10 @@ async function load() {
   // page reads and writes the same areas (chrome.storage.sync for preferences,
   // local for per-machine data) as Gmail and Calendar.
   const s = await settings.load();
+  // Keep the cache current while the page is open (Gmail, the popup or another
+  // computer may change settings), so read-modify-write edits start fresh.
+  if (!load.listening) settings.onChange(() => renderSyncStatus());
+  load.listening = true;
   for (const [k, kind] of Object.entries(FIELDS)) {
     const el = $(k);
     if (!el) continue;
