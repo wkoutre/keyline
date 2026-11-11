@@ -326,6 +326,91 @@ window.InboxKeys = window.InboxKeys || {};
     return false;
   }
 
+  // ---- Reliable control resolution ----------------------------------------
+  // Every toolbar action the palette or a hotkey runs goes through here. A Gmail
+  // control can be missing on the first look for three reasons, each seen live:
+  // its icon is unlabeled until hovered (primeToolbarLabels), the label lands a
+  // beat after the hover, or the action isn't on the toolbar at all and lives in
+  // the toolbar's "More" overflow menu (Mute, Add star, Mark as unread, ...).
+  // So: look once synchronously (no delay when the control is right there),
+  // then prime every unlabeled button, keep polling ~1s, then try the More menu
+  // when the caller names what to look for there, and only then toast.
+  function clickControl(find, what, opts = {}) {
+    let widened = false;
+    waitFor(
+      () => {
+        const hit = find();
+        if (hit || widened) return hit;
+        widened = true;
+        primeToolbarLabels();
+        primeUnlabeledButtons();
+        return find();
+      },
+      (el) => {
+        realClick(el);
+        if (opts.onClick) opts.onClick(el);
+      },
+      () => {
+        if (opts.menu) return clickFromMoreMenu(opts.menu, what);
+        logMissingControl(what);
+        if (opts.onMissing) return opts.onMissing();
+        clickOr(null, what);
+      },
+      12,
+      80
+    );
+    return true;
+  }
+
+  const MORE_MENU = [/^More email options$/i, /^More options$/i, /^More$/i];
+
+  // The toolbar's overflow ("More") button. Toolbars only: a document-wide
+  // "More" could be a per-message kebab or a link in the mail.
+  function moreMenuButton() {
+    for (const bar of Array.from(document.querySelectorAll(SEL.toolbars))) {
+      const hit = visibleControls(bar).find((el) => MORE_MENU.some((p) => p.test(controlLabel(el))));
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  // Open the toolbar's More menu and click the item matching `patterns`. Only a
+  // menu that was NOT already showing counts (a stale menu could belong to
+  // something else); if the item never shows, close the menu we opened rather
+  // than leave it over the mail.
+  function clickFromMoreMenu(patterns, what) {
+    const fail = () => {
+      logMissingControl(what);
+      clickOr(null, what);
+      return false;
+    };
+    const more = moreMenuButton();
+    if (!more) return fail();
+    const stale = new Set(showingMenus());
+    hover(more);
+    realClick(more);
+    waitFor(
+      () => {
+        for (const menu of showingMenus()) {
+          if (stale.has(menu)) continue;
+          const item = Array.from(menu.querySelectorAll(SEL.menuItem))
+            .filter(isVisible)
+            .find((el) => patterns.some((p) => p.test(controlLabel(el))));
+          if (item) return item;
+        }
+        return null;
+      },
+      (item) => realClick(item),
+      () => {
+        if (showingMenus().some((m) => !stale.has(m))) realClick(more);
+        fail();
+      },
+      8,
+      80
+    );
+    return true;
+  }
+
   function attachmentPreviewDialog() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"], [role="presentation"]')).filter(isShowing);
     return (
@@ -370,13 +455,18 @@ window.InboxKeys = window.InboxKeys || {};
   // now toasts so the failure is visible in the field.
   function action(tooltipPrefixes, what) {
     const prefixes = [].concat(tooltipPrefixes);
-    for (const p of prefixes) {
-      if (clickByTooltip(p)) return true;
-    }
-    if (InboxKeys.toast) {
-      InboxKeys.toast(`Gmail control not found: ${what || prefixes[0]}`, { kind: "warn" });
-    }
-    return false;
+    const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return clickControl(
+      () => {
+        for (const p of prefixes) {
+          const hit = queryTooltip(p)[0];
+          if (hit) return hit;
+        }
+        return null;
+      },
+      what || prefixes[0],
+      { menu: prefixes.map((p) => new RegExp("^" + esc(p), "i")) }
+    );
   }
 
   function undo() {
@@ -386,14 +476,13 @@ window.InboxKeys = window.InboxKeys || {};
     return false;
   }
 
+  const STAR_PATTERNS = [/^Star$/i, /^Not starred$/i, /^Add star$/i, /^Remove star$/i, /^Starred$/i];
   function toggleStar(scope = document) {
-    return clickOr(findControl([
-      /^Star$/i,
-      /^Not starred$/i,
-      /^Add star$/i,
-      /^Remove star$/i,
-      /^Starred$/i,
-    ], scope), "Star");
+    return clickControl(
+      () => findControl(STAR_PATTERNS, scope) || (scope !== document ? findControl(STAR_PATTERNS) : null),
+      "Star",
+      { menu: [/^Add star$/i, /^Remove star$/i] }
+    );
   }
 
   function attachFile() {
@@ -425,23 +514,22 @@ window.InboxKeys = window.InboxKeys || {};
     return false;
   }
 
+  const READ_PATTERNS = [/^Mark as read$/i, /^Mark as unread$/i, /^Mark read$/i, /^Mark unread$/i];
   function markReadUnread() {
-    return clickOr(findControl([/^Mark as read$/i, /^Mark as unread$/i, /^Mark read$/i, /^Mark unread$/i]), "Mark as read/unread");
+    return clickControl(() => findControl(READ_PATTERNS), "Mark as read/unread", { menu: READ_PATTERNS });
   }
 
   function snooze() {
-    const btn = findControl([/^Snooze\b/i, /^Remind me\b/i]);
-    if (btn) return realClick(btn);
-    if (InboxKeys.toast) InboxKeys.toast("No snooze button found", { kind: "warn" });
-    return false;
+    return clickControl(() => findControl([/^Snooze\b/i, /^Remind me\b/i]), "Snooze", { menu: [/^Snooze\b/i] });
   }
 
   function markNotDone() {
-    return clickOr(findControl([/^Move to inbox$/i, /^Mark not done$/i, /^Not done$/i]), "Move to inbox");
+    const patterns = [/^Move to inbox$/i, /^Mark not done$/i, /^Not done$/i];
+    return clickControl(() => findControl(patterns), "Move to inbox", { menu: patterns });
   }
 
   function mute() {
-    return clickOr(findControl([/^Mute$/i]), "Mute");
+    return clickControl(() => findControl([/^Mute$/i]), "Mute", { menu: [/^Mute$/i] });
   }
 
   function unsubscribe() {
@@ -613,19 +701,21 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   function openLabelMenu() {
-    return clickOr(findControl([/^Label$/i, /^Labels$/i, /^Label as$/i]), "Label menu");
+    const patterns = [/^Label$/i, /^Labels$/i, /^Label as$/i];
+    return clickControl(() => findControl(patterns), "Label menu", { menu: patterns });
   }
 
   function removeLabel() {
-    return clickOr(findControl([/^Remove label$/i, /^Remove$/i]), "Remove label");
+    return clickControl(() => findControl([/^Remove label$/i, /^Remove$/i]), "Remove label", { menu: [/^Remove label$/i] });
   }
 
   function removeAllLabels() {
-    return clickOr(findControl([/^Remove all labels$/i]), "Remove all labels");
+    return clickControl(() => findControl([/^Remove all labels$/i]), "Remove all labels", { menu: [/^Remove all labels$/i] });
   }
 
   function openMoveMenu() {
-    return clickOr(findControl([/^Move$/i, /^Move to$/i]), "Move menu");
+    const patterns = [/^Move$/i, /^Move to$/i];
+    return clickControl(() => findControl(patterns), "Move menu", { menu: patterns });
   }
 
   // Read the signed-in account email from the top-right account button.
@@ -1082,10 +1172,10 @@ window.InboxKeys = window.InboxKeys || {};
 
   // Older = next (further down the list), Newer = previous.
   function nextThread() {
-    return clickOr(exactButton("Older"), "Older (next conversation)");
+    return clickControl(() => exactButton("Older"), "Older (next conversation)");
   }
   function prevThread() {
-    return clickOr(exactButton("Newer"), "Newer (previous conversation)");
+    return clickControl(() => exactButton("Newer"), "Newer (previous conversation)");
   }
 
   // List pager: in a list view Gmail's "Older"/"Newer" toolbar buttons step to the
@@ -1117,23 +1207,7 @@ window.InboxKeys = window.InboxKeys || {};
   // label to land before giving up. The first probe is synchronous, so a
   // labeled toolbar still archives with no delay.
   function archiveThread() {
-    let widened = false;
-    waitFor(
-      () => {
-        const hit = exactButton("Archive");
-        if (hit || widened) return hit;
-        widened = true;
-        return primeUnlabeledButtons() ? exactButton("Archive") : null;
-      },
-      (el) => realClick(el),
-      () => {
-        logMissingControl("Archive");
-        clickOr(null, "Archive");
-      },
-      12,
-      80
-    );
-    return true;
+    return clickControl(() => exactButton("Archive"), "Archive");
   }
 
   // Console breadcrumb for a "control not found" report: what toolbars and
@@ -1371,6 +1445,8 @@ window.InboxKeys = window.InboxKeys || {};
     exactButton,
     primeToolbarLabels,
     primeUnlabeledButtons,
+    clickControl,
+    clickFromMoreMenu,
     realClick,
     hover,
     isSynthesizingHover,
