@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Inbox Keys: Gmail command palette, hotkeys, split inbox & calendar",
-  "version": "0.6.4",
-  "description": "Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, account switching, and a calendar key for Gmail.",
+  "name": "Mailstroke: keyboard shortcuts & command palette for Gmail",
+  "version": "0.7.0",
+  "description": "Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, and account switching for Gmail and Google Calendar.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
