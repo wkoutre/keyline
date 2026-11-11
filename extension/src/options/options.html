@@ -11,6 +11,12 @@
 
       <section>
         <h2>General</h2>
+        <p class="muted">
+          Settings, tabs and shortcut remaps sync to your other computers through
+          your browser's own sync (when it is on). No Keyline account needed.
+          Account names stay on each computer.
+        </p>
+        <p class="muted" id="sync-status"></p>
         <label class="row"><span>Extension enabled</span><input type="checkbox" id="enabled" /></label>
         <label class="row"><span>Keyboard shortcuts</span><input type="checkbox" id="hotkeysEnabled" /></label>
         <label class="row"><span>Split-inbox tab bar</span><input type="checkbox" id="tabsEnabled" /></label>
@@ -67,6 +73,7 @@
       <p id="saved" class="saved"></p>
     </main>
     <script src="../shared/keymap.js"></script>
+    <script src="../content/storage.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

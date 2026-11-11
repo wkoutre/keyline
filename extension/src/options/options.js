@@ -9,6 +9,16 @@ const FIELDS = {
   paletteHotkey: "value",
 };
 const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled", "calendarEnabled", "autoAdvance"]);
+const settings = window.InboxKeys.storage;
+
+function renderSyncStatus() {
+  const el = $("sync-status");
+  if (!el) return;
+  const unsynced = settings.unsynced();
+  el.textContent = unsynced.length
+    ? `Saved on this computer only (could not sync): ${unsynced.join(", ")}`
+    : "";
+}
 
 function flashSaved() {
   $("saved").textContent = "Saved";
@@ -17,14 +27,17 @@ function flashSaved() {
 }
 
 async function load() {
-  const keys = [...Object.keys(FIELDS), "accountNames", "tabs", "keyOverrides"];
-  const s = await chrome.storage.local.get(keys);
+  // Settings go through the content scripts' storage module, so the options
+  // page reads and writes the same areas (chrome.storage.sync for preferences,
+  // local for per-machine data) as Gmail and Calendar.
+  const s = await settings.load();
   for (const [k, kind] of Object.entries(FIELDS)) {
     const el = $(k);
     if (!el) continue;
     if (kind === "checkbox") el.checked = s[k] ?? DEFAULT_ON.has(k);
     else el.value = s[k] ?? "";
   }
+  renderSyncStatus();
   renderAccounts(s.accountNames || {});
   renderTabs(s.tabs);
   keymapOverrides = s.keyOverrides || {};
@@ -344,7 +357,7 @@ function showCollisionBanner(binding, clash) {
 
 async function saveBinding(id, binding) {
   keymapOverrides = { ...keymapOverrides, [id]: [binding] };
-  await chrome.storage.local.set({ keyOverrides: keymapOverrides });
+  await settings.set({ keyOverrides: keymapOverrides });
   renderKeymap();
   flashSaved();
 }
@@ -360,7 +373,7 @@ async function replaceBinding(id, binding, otherId) {
     next[otherId] = remaining; // may be [] → other command becomes unbound
   }
   keymapOverrides = next;
-  await chrome.storage.local.set({ keyOverrides: keymapOverrides });
+  await settings.set({ keyOverrides: keymapOverrides });
   renderKeymap();
   flashSaved();
 }
@@ -369,7 +382,7 @@ async function resetBinding(id) {
   const next = { ...keymapOverrides };
   delete next[id];
   keymapOverrides = next;
-  await chrome.storage.local.set({ keyOverrides: keymapOverrides });
+  await settings.set({ keyOverrides: keymapOverrides });
   renderKeymap();
   flashSaved();
 }
@@ -377,7 +390,7 @@ async function resetBinding(id) {
 async function resetAllBindings() {
   cancelRecording();
   keymapOverrides = {};
-  await chrome.storage.local.set({ keyOverrides: {} });
+  await settings.set({ keyOverrides: {} });
   renderKeymap();
   flashSaved();
 }
@@ -415,9 +428,9 @@ function renderAccounts(names) {
   });
   wrap.querySelectorAll("input").forEach((inp) =>
     inp.addEventListener("change", async () => {
-      const cur = (await chrome.storage.local.get("accountNames")).accountNames || {};
+      const cur = { ...(settings.get("accountNames") || {}) };
       cur[inp.dataset.idx] = inp.value;
-      await chrome.storage.local.set({ accountNames: cur });
+      await settings.set({ accountNames: cur });
       flashSaved();
     })
   );
@@ -433,7 +446,8 @@ Object.entries(FIELDS).forEach(([k, kind]) => {
   if (!el) return;
   el.addEventListener("change", async () => {
     const val = kind === "checkbox" ? el.checked : el.value.trim();
-    await chrome.storage.local.set({ [k]: val });
+    await settings.set({ [k]: val });
+    renderSyncStatus();
     flashSaved();
   });
 });

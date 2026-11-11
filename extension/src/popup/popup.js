@@ -1,9 +1,12 @@
 const $ = (id) => document.getElementById(id);
 const TOGGLES = ["enabled", "hotkeysEnabled", "tabsEnabled"];
 const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled"]);
+// Same storage module the content scripts use (sync for settings, local for
+// per-machine data).
+const settings = window.InboxKeys.storage;
 
 async function init() {
-  const s = await chrome.storage.local.get([...TOGGLES, "accountNames"]);
+  const s = await settings.load();
   TOGGLES.forEach((k) => ($(k).checked = s[k] ?? DEFAULT_ON.has(k)));
 
   // Show current account email if we can read it from the active Gmail tab.
@@ -21,7 +24,7 @@ async function init() {
 
 TOGGLES.forEach((k) =>
   document.addEventListener("change", (e) => {
-    if (e.target.id === k) chrome.storage.local.set({ [k]: e.target.checked });
+    if (e.target.id === k) settings.set({ [k]: e.target.checked });
   })
 );
 
