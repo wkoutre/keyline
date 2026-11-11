@@ -105,12 +105,21 @@ window.InboxKeys = window.InboxKeys || {};
     return c.indexOf(ctx) !== -1 || c.indexOf("*") !== -1;
   }
 
-  function matchesModK(e) {
-    const binding = storage.get("paletteHotkey") || "mod+k";
-    const wantMod = binding.includes("mod");
-    const key = binding.split("+").pop();
-    const mod = e.metaKey || e.ctrlKey;
-    return e.key.toLowerCase() === key && (!wantMod || mod);
+  // The palette hotkey (storage.paletteHotkey, default Mod+K, remappable in
+  // settings). Matching lives in keymap.js so Gmail, Calendar and the options
+  // recorder agree on what a binding means.
+  function matchesPaletteKey(e) {
+    const KM = window.InboxKeys_KEYMAP;
+    const binding = storage.get("paletteHotkey") || "Mod+K";
+    if (KM && typeof KM.matchesPaletteHotkey === "function") return KM.matchesPaletteHotkey(e, binding);
+    return (e.metaKey || e.ctrlKey) && String(e.key || "").toLowerCase() === "k";
+  }
+
+  // Cmd+K with text selected in the message editor is Gmail's "insert link".
+  // Leave that keystroke to Gmail (unconsumed) instead of opening the palette.
+  function isLinkShortcut(e) {
+    const KM = window.InboxKeys_KEYMAP;
+    return !!(KM && typeof KM.isEditorLinkShortcut === "function" && KM.isEditorLinkShortcut(e, document));
   }
 
   function clearChord() {
@@ -233,8 +242,10 @@ window.InboxKeys = window.InboxKeys || {};
   function onKeydown(e) {
     if (!storage.get("enabled")) return;
 
-    // Palette toggle works everywhere (even while typing).
-    if (matchesModK(e)) {
+    // Palette toggle works everywhere (even while typing), except Cmd+K over a
+    // text selection in the email editor, which stays Gmail's insert-link key.
+    if (matchesPaletteKey(e)) {
+      if (!palette.isOpen() && isLinkShortcut(e)) return;
       consume(e);
       palette.toggle();
       return;

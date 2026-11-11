@@ -94,6 +94,10 @@ kbd {
 .km-collision .btn-ghost { color: #b91c1c; border-color: #fca5a5; }
 .km-collision .btn-ghost:hover { background: #fee2e2; }
 
+.palette-key-row { margin-top: 10px; border-bottom: 0; }
+.palette-key-hint { margin: 2px 0 0; }
+.palette-key-error { color: #b91c1c; }
+
 .acct { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
 .acct .idx { font-family: ui-monospace, monospace; color: #94a3b8; width: 40px; }
 .acct input { flex: 1; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; }

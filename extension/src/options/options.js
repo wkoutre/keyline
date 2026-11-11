@@ -6,7 +6,6 @@ const FIELDS = {
   calendarEnabled: "checkbox",
   gmailNativeShortcuts: "checkbox",
   autoAdvance: "checkbox",
-  paletteHotkey: "value",
 };
 const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled", "calendarEnabled", "autoAdvance"]);
 const settings = window.InboxKeys.storage;
@@ -46,6 +45,83 @@ async function load() {
   renderTabs(s.tabs);
   keymapOverrides = s.keyOverrides || {};
   renderKeymap();
+  paletteHotkey = normalizePalette(s.paletteHotkey);
+  renderPaletteHotkey();
+}
+
+// ---- Command palette hotkey ----------------------------------------------
+// One modified key (Cmd/Ctrl/Option + key), stored as storage.paletteHotkey.
+// Recorded here with the same rules the content scripts match with (keymap.js).
+
+let paletteHotkey = "Mod+K";
+let paletteRecording = false;
+const PALETTE_HINT = $("paletteHotkeyHint") ? $("paletteHotkeyHint").innerHTML : "";
+
+function normalizePalette(v) {
+  const KM = window.InboxKeys_KEYMAP;
+  return KM && typeof KM.normalizePaletteHotkey === "function" ? KM.normalizePaletteHotkey(v) : String(v || "Mod+K");
+}
+
+function renderPaletteHotkey(error) {
+  const cell = $("paletteHotkeyCell");
+  if (!cell) return;
+  cell.classList.toggle("km-recording", paletteRecording);
+  cell.innerHTML = paletteRecording
+    ? `<span class="km-listening">Press a shortcut…</span>`
+    : keyChips(paletteHotkey);
+  const KM = window.InboxKeys_KEYMAP;
+  $("paletteHotkeyReset").disabled = paletteHotkey === ((KM && KM.PALETTE_DEFAULT) || "Mod+K");
+  const hint = $("paletteHotkeyHint");
+  hint.classList.toggle("palette-key-error", !!error);
+  if (error) hint.textContent = error;
+  else hint.innerHTML = PALETTE_HINT;
+}
+
+function startPaletteRecording() {
+  if (paletteRecording) return;
+  cancelRecording();
+  paletteRecording = true;
+  renderPaletteHotkey();
+  window.addEventListener("keydown", onPaletteRecordKey, true);
+  setTimeout(() => window.addEventListener("mousedown", onPaletteRecordOutside, true), 0);
+}
+
+function stopPaletteRecording(error) {
+  paletteRecording = false;
+  window.removeEventListener("keydown", onPaletteRecordKey, true);
+  window.removeEventListener("mousedown", onPaletteRecordOutside, true);
+  renderPaletteHotkey(error);
+}
+
+function onPaletteRecordOutside(e) {
+  if ($("paletteHotkeyCell").contains(e.target)) return;
+  stopPaletteRecording();
+}
+
+function onPaletteRecordKey(e) {
+  if (!paletteRecording) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const KM = window.InboxKeys_KEYMAP;
+  if (e.key === "Escape" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    stopPaletteRecording();
+    return;
+  }
+  const binding = KM.paletteBindingFromEvent(e);
+  if (!binding) return; // lone modifier: keep listening
+  const problem = KM.paletteHotkeyProblem(binding, keymapOverrides);
+  if (problem) {
+    stopPaletteRecording(problem);
+    return;
+  }
+  savePaletteHotkey(binding);
+}
+
+async function savePaletteHotkey(binding) {
+  paletteHotkey = normalizePalette(binding);
+  await settings.set({ paletteHotkey });
+  stopPaletteRecording();
+  flashSaved();
 }
 
 // ---- Keyboard shortcut editor -------------------------------------------
@@ -454,6 +530,19 @@ Object.entries(FIELDS).forEach(([k, kind]) => {
     renderSyncStatus();
     flashSaved();
   });
+});
+
+// Palette hotkey wiring.
+$("paletteHotkeyCell").addEventListener("click", startPaletteRecording);
+$("paletteHotkeyCell").addEventListener("keydown", (e) => {
+  if (!paletteRecording && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    startPaletteRecording();
+  }
+});
+$("paletteHotkeyReset").addEventListener("click", () => {
+  const KM = window.InboxKeys_KEYMAP;
+  savePaletteHotkey((KM && KM.PALETTE_DEFAULT) || "Mod+K");
 });
 
 // Keymap toolbar wiring.
