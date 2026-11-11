@@ -2933,4 +2933,102 @@ function replyWithGeminiFixture() {
   }
 }
 
+// Palette reliability: every row the palette offers must be able to act where
+// it was opened, and toolbar actions must survive the three live failure modes
+// (unlabeled icon, late label, action only in the toolbar's More menu).
+{
+  const titles = (w) => Array.from(w.document.querySelectorAll(".inboxkeys-row-title")).map((el) => el.textContent);
+
+  // Context filtering: list-only and thread-only commands don't leak across.
+  {
+    const w = load(listFixture(), "#inbox");
+    w.InboxKeys.palette.show();
+    const t = titles(w);
+    assert.equal(t.includes("Reply"), false, "list palette hides thread-only Reply");
+    assert.equal(t.includes("Go to Inbox"), true, "list palette keeps navigation");
+    assert.equal(t.includes("Archive"), true, "list palette keeps Archive");
+    w.InboxKeys.palette.hide();
+  }
+  {
+    const w = load(threadFixture(), "#inbox/" + ID);
+    w.InboxKeys.palette.show();
+    const t = titles(w);
+    assert.equal(t.includes("Reply"), true, "thread palette offers Reply");
+    assert.equal(t.includes("Go to top of list"), false, "thread palette hides list-only Go to top");
+    assert.equal(t.includes("Go to Inbox"), true, "thread palette keeps navigation");
+    w.InboxKeys.palette.hide();
+  }
+
+  // More-menu fallback: Mute isn't on the toolbar, only in its More menu.
+  const moreFixture = (items) =>
+    '<div role="toolbar"><div role="button" aria-label="Archive"></div>' +
+    '<div role="button" aria-label="More email options" id="more"></div></div>' +
+    '<div role="menu" id="menu">' +
+    items.map((t) => `<div role="menuitem" class="J-N">${t}</div>`).join("") +
+    "</div>";
+  const wire = (w) => {
+    const toasts = [];
+    w.InboxKeys.toast = (m) => toasts.push(String(m));
+    w.console.warn = () => {};
+    const timers = [];
+    w.setTimeout = (fn) => { timers.push(fn); return 0; };
+    const drain = () => { let n = 0; while (timers.length && n++ < 500) timers.shift()(); };
+    const menu = w.document.getElementById("menu");
+    let shown = false;
+    // jsdom's sparse getComputedStyle: model showing via the aria-hidden flag isShowing honors.
+    menu.setAttribute("aria-hidden", "true");
+    // Like Gmail, a closed menu's items have no box, so only an open menu's
+    // items are visible to lookups.
+    const box = (on) => ({ width: on ? 120 : 0, height: on ? 20 : 0, top: 0, left: 0, right: 0, bottom: 0 });
+    for (const el of [menu, ...menu.querySelectorAll('[role="menuitem"]')]) el.getBoundingClientRect = () => box(shown);
+    w.document.getElementById("more").addEventListener("click", () => {
+      shown = !shown;
+      if (shown) menu.removeAttribute("aria-hidden"); else menu.setAttribute("aria-hidden", "true");
+    });
+    return { toasts, drain, menu, isShown: () => shown };
+  };
+  {
+    const w = load(moreFixture(["Mark as unread", "Mute", "Add star"]) + threadFixture(), "#inbox/" + ID);
+    const t = wire(w);
+    let muted = false;
+    Array.from(w.document.querySelectorAll('[role="menuitem"]')).find((el) => el.textContent === "Mute")
+      .addEventListener("click", () => { muted = true; });
+    w.InboxKeys.gmail.mute();
+    t.drain();
+    assert.equal(muted, true, "Mute is reached through the toolbar's More menu");
+    assert.equal(t.toasts.some((m) => /not found/.test(m)), false, "no toast when the More menu has it");
+  }
+  {
+    const w = load(moreFixture(["Mark as unread"]) + threadFixture(), "#inbox/" + ID);
+    const t = wire(w);
+    w.InboxKeys.gmail.mute();
+    t.drain();
+    assert.equal(t.isShown(), false, "a More menu without the item is closed again, not left open");
+    assert.equal(t.toasts.some((m) => /not found: Mute/.test(m)), true, "a truly missing action still toasts");
+  }
+
+  // Smoke: every command the palette offers in a thread and in the list runs
+  // without throwing (page-leaving ones excluded: jsdom can't navigate).
+  const leaves = /^(acct-|calendar-|compose$|go-settings$)/;
+  for (const [html, hash] of [[threadFixture(), "#inbox/" + ID], [listFixture(), "#inbox"]]) {
+    const w = load(html, hash);
+    w.InboxKeys.toast = () => {};
+    w.console.warn = () => {};
+    w.console.error = () => {};
+    w.console.table = () => {};
+    w.console.log = () => {};
+    const timers = [];
+    w.setTimeout = (fn) => { timers.push(fn); return 0; };
+    w.window.open = () => ({ focus() {} });
+    const ctx = w.InboxKeys.gmail.getContext();
+    for (const cmd of w.InboxKeys.commands.all()) {
+      if (leaves.test(cmd.id)) continue;
+      if (cmd.contexts && cmd.contexts.length && !cmd.contexts.includes(ctx)) continue;
+      assert.doesNotThrow(() => { cmd.run(); let n = 0; while (timers.length && n++ < 500) timers.shift()(); }, `palette command ${cmd.id} throws in ${ctx}`);
+      if (w.InboxKeys.palette.isOpen()) w.InboxKeys.palette.hide();
+      if (w.location.hash !== hash) w.location.hash = hash;
+    }
+  }
+}
+
 console.log("hotkey integration tests passed");

@@ -10,6 +10,22 @@ window.InboxKeys = window.InboxKeys || {};
   let active = 0;
   let kbNavAt = 0; // timestamp of the last keyboard move, to ignore stray mouseenter
   let chooseItems = null; // non-null → one-shot picker mode over these items instead of the command registry
+  let openCtx = null; // Gmail context captured when the palette opened
+
+  // Only offer commands that can act where the palette was opened: "Reply" in
+  // the inbox list or "Archive" in Settings could only fail. Commands carry the
+  // same .contexts the hotkey engine gates on. The palette's own input steals
+  // focus, so a focused search box counts as the list it sits over, and from a
+  // compose window or a Gmail dialog the universal commands (go to, tabs,
+  // accounts, settings) stay available alongside any compose command.
+  function offeredIn(cmd, ctx) {
+    const c = cmd.contexts;
+    if (!ctx || !c || !c.length || c.includes("*")) return true;
+    const norm = ctx === "searchFocused" ? "inboxList" : ctx;
+    if (c.includes(norm)) return true;
+    if ((norm === "compose" || norm === "modalOpen") && c.includes("unknown")) return true;
+    return false;
+  }
 
   // --- tiny fuzzy matcher: subsequence match with a contiguity bonus ---
   function score(query, text) {
@@ -102,7 +118,7 @@ window.InboxKeys = window.InboxKeys || {};
 
   function render(keepQuery) {
     const q = input.value.trim();
-    const scored = (chooseItems || commands.all())
+    const scored = (chooseItems || commands.all().filter((cmd) => offeredIn(cmd, openCtx)))
       .map((cmd) => ({ cmd, s: score(q, title(cmd) + " " + (cmd.searchText || "") + " " + (cmd.group || "")) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s);
@@ -178,6 +194,8 @@ window.InboxKeys = window.InboxKeys || {};
 
   function show() {
     chooseItems = null;
+    const g = InboxKeys.gmail;
+    openCtx = g && g.getContext && !open ? g.getContext() : openCtx;
     openWith("Type a command or search…", keyLabel("Mod+K"));
   }
 

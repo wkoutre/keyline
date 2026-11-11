@@ -316,6 +316,13 @@ window.InboxKeys = window.InboxKeys || {};
     );
   }
 
+  // A list action invoked with no cursor row and no selection has nothing to
+  // act on; say so instead of silently eating the keystroke or palette pick.
+  function noTarget() {
+    if (InboxKeys.toast) InboxKeys.toast("No conversation selected", { kind: "info" });
+    return false;
+  }
+
   function cannotArchive() {
     if (InboxKeys.toast) {
       InboxKeys.toast("Not in Inbox, nothing to archive", { kind: "warn" });
@@ -371,7 +378,7 @@ window.InboxKeys = window.InboxKeys || {};
       return;
     }
     const row = cursorRow();
-    if (!row) return;
+    if (!row) return noTarget();
     const idx = removalIndex([row]);
     if (clickPerRowArchive(row)) {
       reanchorAfterRemoval([row], idx);
@@ -399,12 +406,13 @@ window.InboxKeys = window.InboxKeys || {};
     if (sel.length) {
       const idx = removalIndex(sel);
       const b = toolbarButton("Delete") || toolbarButton("Trash");
-      if (b) gmail.realClick(b);
+      if (!b) return gmail.action(["Delete"], "Delete");
+      gmail.realClick(b);
       reanchorAfterRemoval(sel, idx);
       return;
     }
     const row = cursorRow();
-    if (!row) return;
+    if (!row) return noTarget();
     const idx = removalIndex([row]);
     const rb = rowButtonMatching(row, [/^Delete$/i, /^Trash$/i]);
     if (rb && gmail.isVisible(rb)) {
@@ -415,7 +423,11 @@ window.InboxKeys = window.InboxKeys || {};
     setSelected(row, true);
     setTimeout(() => {
       const b = toolbarButton("Delete") || toolbarButton("Trash");
-      if (b) gmail.realClick(b);
+      if (!b) {
+        gmail.action(["Delete"], "Delete");
+        return;
+      }
+      gmail.realClick(b);
       reanchorAfterRemoval([row], idx);
     }, 70);
   }
@@ -429,7 +441,11 @@ window.InboxKeys = window.InboxKeys || {};
       /^Remove star$/i,
       /^Starred$/i,
     ]);
-    if (star && gmail.isVisible(star)) gmail.realClick(star);
+    if (star && gmail.isVisible(star)) return gmail.realClick(star);
+    if (!row) return noTarget();
+    // Gmail's per-row star is a fixed column; if it's missing, select the row
+    // and use the toolbar/More menu path rather than eating the action.
+    return withSelection(() => gmail.toggleStar());
   }
 
   const READ_PATTERNS = [/^Mark as read$/i, /^Mark as unread$/i, /^Mark read$/i, /^Mark unread$/i];
@@ -443,7 +459,7 @@ window.InboxKeys = window.InboxKeys || {};
       return true;
     }
     const row = cursorRow();
-    if (!row) return false;
+    if (!row) return noTarget();
     const rb = rowButtonMatching(row, READ_PATTERNS);
     if (rb && gmail.isVisible(rb)) {
       gmail.realClick(rb);
@@ -472,7 +488,7 @@ window.InboxKeys = window.InboxKeys || {};
       return gmail.snooze();
     }
     const row = cursorRow();
-    if (!row) return false;
+    if (!row) return noTarget();
     sel.forEach((selected) => {
       if (selected !== row) setSelected(selected, false);
     });
@@ -490,7 +506,7 @@ window.InboxKeys = window.InboxKeys || {};
       return true;
     }
     const row = cursorRow();
-    if (!row) return false;
+    if (!row) return noTarget();
     setSelected(row, true);
     setTimeout(action, 70);
     return true;
@@ -502,16 +518,15 @@ window.InboxKeys = window.InboxKeys || {};
       return true;
     }
     const row = cursorRow();
-    if (!row) return false;
+    if (!row) return noTarget();
     setSelected(row, true);
-    const ran = action();
-    if (ran) {
-      setSelected(row, false);
-      return true;
-    }
+    // Toolbar actions resolve asynchronously (gmail.clickControl polls up to
+    // ~1s for an unlabeled or late control), so hold the temporary selection
+    // until that window has passed; dropping it early would aim the toolbar
+    // at nothing.
     setTimeout(() => {
       action();
-      setTimeout(() => setSelected(row, false), 120);
+      setTimeout(() => setSelected(row, false), 1200);
     }, 70);
     return true;
   }
