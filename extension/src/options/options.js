@@ -4,6 +4,7 @@ const FIELDS = {
   hotkeysEnabled: "checkbox",
   tabsEnabled: "checkbox",
   calendarEnabled: "checkbox",
+  gmailNativeShortcuts: "checkbox",
   paletteHotkey: "value",
 };
 const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled", "calendarEnabled"]);

@@ -12,6 +12,10 @@ window.InboxKeys = window.InboxKeys || {};
     calendarFeeds: [], // ICS/Outlook feed URLs added through the unified-calendar layer
     calendarNudgeDismissed: false, // user dismissed the "add more calendars" nudge
     keyOverrides: {}, // { commandId: ["e"] } — per-command key remaps
+    // Gmail's own keyboard shortcuts are on: in an open thread, let the real
+    // keystroke reach Gmail for the keys it already handles natively (see
+    // NATIVE_THREAD_KEYS in hotkeys.js) instead of driving its toolbar.
+    gmailNativeShortcuts: false,
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special
     // landing tab. The user edits these from the gear in the tab bar.
     tabs: [

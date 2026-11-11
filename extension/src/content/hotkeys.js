@@ -149,6 +149,21 @@ window.InboxKeys = window.InboxKeys || {};
     return InboxKeys_KEYMAP.keysFor(id, storage.get("keyOverrides") || {}).includes(binding);
   }
 
+  // Thread-view keys Gmail handles natively with the SAME meaning Keyline gives
+  // them. With gmailNativeShortcuts on, we leave these keystrokes alone and
+  // Gmail acts on the real (trusted) key itself, so nothing depends on finding
+  // and labeling a toolbar button. Only while the user's binding is still the
+  // native key: a remapped command keeps going through Keyline. Not in the list
+  // view, where Gmail's own cursor differs from Keyline's, and not u (Gmail's u
+  // in a thread means "back to list", Keyline's means mark read/unread).
+  const NATIVE_THREAD_KEYS = { e: "archive", "#": "delete", "!": "report-spam", s: "star", z: "undo" };
+  function passToGmailNatively(e, ctx) {
+    if (ctx !== "threadView" || !storage.get("gmailNativeShortcuts")) return false;
+    if (chordPrefix || e.metaKey || e.ctrlKey || e.altKey) return false;
+    const id = NATIVE_THREAD_KEYS[e.key];
+    return !!id && commandHasKey(id, e.key);
+  }
+
   // Calendar key: "0" toggles Gmail's side calendar panel; a quick "0 0" opens
   // calendar in a new tab. Top-level views only (handled by the caller).
   function handleZero() {
@@ -359,6 +374,7 @@ window.InboxKeys = window.InboxKeys || {};
     // Below here we never fire while typing. Modifier chords are allowed for
     // user-configured shortcuts as long as focus is outside editable fields.
     if (isEditable(e.target) && !canOverrideEditable(e, ctx)) return;
+    if (passToGmailNatively(e, ctx)) return;
     const hasNonShiftModifier = e.metaKey || e.ctrlKey || e.altKey;
 
     // Thread view: j/k move between conversations. Arrows move the visible cursor
