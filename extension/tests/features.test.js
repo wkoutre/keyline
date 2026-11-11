@@ -338,6 +338,10 @@ function paletteRows(w) {
     wireGmail(w);
     await openRow(w, "one");
     w.InboxKeys.commands.all().find((c) => c.id === "snooze").run();
+    assert.equal(w.InboxKeys.palette.isOpen(), true, "snooze opens the time picker");
+    press(w, "Escape", { target: w.document.body });
+    assert.equal(w.InboxKeys.palette.isOpen(), false, "first Escape closes the picker");
+    assert.equal(w.location.hash.startsWith("#inbox/"), true, "closing the picker stays in the thread");
     press(w, "Escape", { target: w.document.body });
     await tick(20);
     assert.equal(w.location.hash, "#inbox", "Escape went back");

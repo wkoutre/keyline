@@ -480,12 +480,20 @@ window.InboxKeys = window.InboxKeys || {};
     );
   }
 
-  function snooze() {
+  // Open Gmail's Snooze menu for the selection or the cursor row. `after`
+  // (optional) runs once the menu button was clicked, for the custom-time
+  // picker (gmail.snoozeUntil).
+  function snooze(after) {
     const sel = selectedRows();
+    const clickThen = (b) => {
+      gmail.realClick(b);
+      if (after) after();
+      return true;
+    };
     if (sel.length > 1) {
       const b = toolbarButtonMatching(SNOOZE_PATTERNS);
-      if (b) return gmail.realClick(b);
-      return gmail.snooze();
+      if (b) return clickThen(b);
+      return gmail.snooze(after);
     }
     const row = cursorRow();
     if (!row) return noTarget();
@@ -495,8 +503,8 @@ window.InboxKeys = window.InboxKeys || {};
     setSelected(row, true);
     return waitFor(
       () => toolbarButtonMatching(SNOOZE_PATTERNS),
-      (b) => gmail.realClick(b),
-      () => gmail.snooze()
+      clickThen,
+      () => gmail.snooze(after)
     );
   }
 

@@ -306,6 +306,13 @@ window.InboxKeys = window.InboxKeys || {};
       gmail.attachFile();
       return;
     }
+    // Mod+Shift+Enter in a draft: schedule-send picker (presets or a typed
+    // time), then Gmail's own Schedule send dialog. Gmail binds nothing here.
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key === "Enter" && (ctx === "compose" || inComposeBody)) {
+      consume(e);
+      InboxKeys.later.scheduleSend();
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "d" && (ctx === "compose" || inComposeBody)) {
       consume(e);
       gmail.discardDraft();

@@ -10,6 +10,7 @@ window.InboxKeys = window.InboxKeys || {};
   let active = 0;
   let kbNavAt = 0; // timestamp of the last keyboard move, to ignore stray mouseenter
   let chooseItems = null; // non-null → one-shot picker mode over these items instead of the command registry
+  let chooseDynamic = null; // picker mode: (query) => extra rows built from what was typed, listed first
   let openCtx = null; // Gmail context captured when the palette opened
 
   // Only offer commands that can act where the palette was opened: "Reply" in
@@ -138,7 +139,7 @@ window.InboxKeys = window.InboxKeys || {};
         .map((x) => (boost && boost.has(x.cmd.id) ? { cmd: x.cmd, s: x.s + 3 } : x))
         .sort((a, b) => b.s - a.s)
         .map((x) => x.cmd);
-    if (chooseItems) return rank(chooseItems);
+    if (chooseItems) return [...(chooseDynamic ? chooseDynamic(q) || [] : []), ...rank(chooseItems)];
     const here = (cmd) => offeredIn(cmd, openCtx);
     const recent = (commands.recent ? commands.recent() : []).filter(here);
     const registry = commands.all().filter(here);
@@ -233,6 +234,7 @@ window.InboxKeys = window.InboxKeys || {};
   function show() {
     if (InboxKeys.cheatsheet) InboxKeys.cheatsheet.hide();
     chooseItems = null;
+    chooseDynamic = null;
     const g = InboxKeys.gmail;
     openCtx = g && g.getContext && !open ? g.getContext() : openCtx;
     openWith("Type a command or search…", keyLabel("Mod+K"));
@@ -241,8 +243,12 @@ window.InboxKeys = window.InboxKeys || {};
   // One-shot picker over arbitrary command-shaped items ({title, group, hint,
   // searchText, run}) — same overlay, fuzzy filter, and engine key routing as
   // the command palette (isOpen() covers both, so hotkeys.js needs nothing new).
+  // opts.dynamic(query) may return rows computed from the typed text (the
+  // snooze picker turns "fri 3pm" into a row); they are listed above the
+  // filtered items and are not fuzzy-ranked.
   function choose(opts) {
     chooseItems = (opts && opts.items) || [];
+    chooseDynamic = (opts && opts.dynamic) || null;
     openWith((opts && opts.placeholder) || "Filter…", (opts && opts.prompt) || "");
   }
 
@@ -250,6 +256,7 @@ window.InboxKeys = window.InboxKeys || {};
     if (!root) return;
     open = false;
     chooseItems = null;
+    chooseDynamic = null;
     root.classList.remove("inboxkeys-overlay--open");
     input.blur();
   }
@@ -262,5 +269,5 @@ window.InboxKeys = window.InboxKeys || {};
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  InboxKeys.palette = { show, hide, toggle, choose, isOpen: () => open, move, confirm };
+  InboxKeys.palette = { show, hide, toggle, choose, isOpen: () => open, move, confirm, current: () => items.slice() };
 })();
