@@ -3,14 +3,14 @@
 #
 # Usage: ./release.sh
 # Reads the version from manifest.json, runs the test suite, and writes
-# dist/mailstroke-<version>.zip containing exactly the runtime files
+# dist/keyline-<version>.zip containing exactly the runtime files
 # (manifest + icons PNGs + src), with no junk or build sources.
 set -euo pipefail
 
 cd "$(dirname "$0")"
 
 VERSION=$(node -p "require('./manifest.json').version")
-OUT="dist/mailstroke-${VERSION}.zip"
+OUT="dist/keyline-${VERSION}.zip"
 
 echo "Running tests..."
 npm test

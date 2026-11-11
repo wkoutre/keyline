@@ -1,8 +1,8 @@
 {
-  "name": "mailstroke",
+  "name": "keyline",
   "version": "0.7.0",
   "private": true,
-  "description": "Mailstroke: keyboard shortcuts & command palette for Gmail (Chrome MV3 extension). Fork of Inbox Keys.",
+  "description": "Keyline: keyboard shortcuts & command palette for Gmail (Chrome MV3 extension). Fork of Inbox Keys.",
   "scripts": {
     "test": "node tests/hashutil.test.js && node tests/getcontext.test.js && node tests/storage.test.js && node tests/account-bridge.test.js && node tests/hotkeys.test.js && node tests/tabs-config.test.js && node tests/gcal.test.js && node tests/gcal-ui.test.js && node tests/key-behavior-sim.test.js",
     "smoke:install": "npm install --save-dev playwright && npx playwright install chromium",

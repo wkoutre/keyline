@@ -1,27 +1,27 @@
 # Chrome Web Store submission
 
-Everything you paste into the Chrome Web Store dashboard for Mailstroke, plus the steps in order. Package: `extension/dist/mailstroke-<version>.zip`, built by `extension/release.sh`.
+Everything you paste into the Chrome Web Store dashboard for Keyline, plus the steps in order. Package: `extension/dist/keyline-<version>.zip`, built by `extension/release.sh`.
 
 ## Before the first upload
 
-1. **Put the source on GitHub as a public repo** (for example `wkoutre/mailstroke`), push `main`, and keep the `upstream` remote pointing at `hadijaveed/inbox-keys`. The privacy policy URL below needs a public page.
+1. **Put the source on GitHub as a public repo** (for example `wkoutre/keyline`), push `main`, and keep the `upstream` remote pointing at `hadijaveed/inbox-keys`. The privacy policy URL below needs a public page.
 2. **Register as a developer** at <https://chrome.google.com/webstore/devconsole>: sign in with the Google account that should own the listing, turn on 2-Step Verification if it isn't already, pay the one-time $5 fee, and verify the contact email.
 3. **Account settings:** declare **non-trader** (personal, non-commercial). Set the publisher display name.
 
 ## Package
 
-- Run `cd extension && ./release.sh`. It runs the tests and writes `dist/mailstroke-<version>.zip`.
+- Run `cd extension && ./release.sh`. It runs the tests and writes `dist/keyline-<version>.zip`.
 - Dashboard: **Items, New item**, upload the zip.
 
 ## Store listing tab
 
-- **Name** (from the manifest): Mailstroke: keyboard shortcuts & command palette for Gmail
+- **Name** (from the manifest): Keyline: keyboard shortcuts & command palette for Gmail
 - **Summary** (from the manifest description, 132 characters max): Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, and account switching for Gmail and Google Calendar.
 - **Description:**
 
-  > Mailstroke makes Gmail keyboard-first. Press Cmd/Ctrl+K for a command palette that runs any Gmail action, use single-key shortcuts to move through your inbox and conversations, split your inbox into tabs built from Gmail searches, and switch between signed-in accounts with one key. On Google Calendar it adds a palette for toggling calendars and jumping between days, weeks, and months.
+  > Keyline makes Gmail keyboard-first. Press Cmd/Ctrl+K for a command palette that runs any Gmail action, use single-key shortcuts to move through your inbox and conversations, split your inbox into tabs built from Gmail searches, and switch between signed-in accounts with one key. On Google Calendar it adds a palette for toggling calendars and jumping between days, weeks, and months.
   >
-  > Privacy by design: Mailstroke never uses the Gmail API, never sees your mail, and makes no network requests. It works by clicking Gmail's own buttons for you. Your settings stay in your browser.
+  > Privacy by design: Keyline never uses the Gmail API, never sees your mail, and makes no network requests. It works by clicking Gmail's own buttons for you. Your settings stay in your browser.
   >
   > Open source (MIT). A fork of Inbox Keys by Hadi Javeed.
 
@@ -40,7 +40,7 @@ Everything you paste into the Chrome Web Store dashboard for Mailstroke, plus th
   - Host permission `https://calendar.google.com/*`: Content scripts add the calendar palette and shortcuts to Google Calendar.
 - **Remote code:** No, I am not using remote code.
 - **Data usage:** check nothing in the "collects" list, then tick all three certifications (no selling data, no unrelated use, no creditworthiness use).
-- **Privacy policy URL:** `https://github.com/<you>/mailstroke/blob/main/PRIVACY.md`
+- **Privacy policy URL:** `https://github.com/<you>/keyline/blob/main/PRIVACY.md`
 
 ## Distribution tab
 

@@ -1,22 +1,22 @@
-# Mailstroke
+# Keyline
 
 Superhuman-speed Gmail, without giving anyone your email.
 
-Mailstroke is a fork of [Inbox Keys](https://github.com/hadijaveed/inbox-keys) by Hadi Javeed (MIT). It carries fixes that aren't merged upstream yet, starting with [hadijaveed/inbox-keys#2](https://github.com/hadijaveed/inbox-keys/pull/2), which fixes "Gmail control not found: Archive" in a freshly opened conversation by priming Gmail's unlabeled toolbar buttons before looking them up. Internal identifiers (`inboxkeys` CSS classes, storage keys) are left as-is so upstream changes merge cleanly.
+Keyline is a fork of [Inbox Keys](https://github.com/hadijaveed/inbox-keys) by Hadi Javeed (MIT). It carries fixes that aren't merged upstream yet, starting with [hadijaveed/inbox-keys#2](https://github.com/hadijaveed/inbox-keys/pull/2), which fixes "Gmail control not found: Archive" in a freshly opened conversation by priming Gmail's unlabeled toolbar buttons before looking them up. Internal identifiers (`inboxkeys` CSS classes, storage keys) are left as-is so upstream changes merge cleanly.
 
 
-Mailstroke is a **Cmd+K command palette**, **keyboard shortcuts**, **split-inbox tabs**, **fast account switching**, and a **unified calendar layer** for Gmail and Google Calendar, shipped as a zero-dependency Chrome extension (Manifest V3). Install it, press `Cmd+K` in Gmail, and every action is a keystroke away.
+Keyline is a **Cmd+K command palette**, **keyboard shortcuts**, **split-inbox tabs**, **fast account switching**, and a **unified calendar layer** for Gmail and Google Calendar, shipped as a zero-dependency Chrome extension (Manifest V3). Install it, press `Cmd+K` in Gmail, and every action is a keystroke away.
 
 ## Why you'd want this
 
-Superhuman costs $30/month and works by reading your entire mailbox through the Gmail API on their servers. Mailstroke gives you the part that actually makes you fast, the keyboard-first workflow, for free, with a design that makes reading your mail impossible:
+Superhuman costs $30/month and works by reading your entire mailbox through the Gmail API on their servers. Keyline gives you the part that actually makes you fast, the keyboard-first workflow, for free, with a design that makes reading your mail impossible:
 
 - **No Gmail API.** It never authenticates against your mail. There is no OAuth screen because there is nothing to grant.
 - **No server, no analytics, no AI.** Nothing leaves your browser. There is no backend to trust because there is no backend.
 - **One permission: `storage`.** That's your settings, kept locally, plus host access so the content scripts can run on Gmail and Calendar. You can verify this in `manifest.json` in about ten seconds.
 - **No build step, no dependencies.** The code that runs is the code in this repo. Auditing the whole extension is an afternoon, not a project.
 
-Everything works by driving Google's own UI from content scripts: the same buttons you would click, clicked faster. Mailstroke never reads, sends, or stores your mail or calendar events.
+Everything works by driving Google's own UI from content scripts: the same buttons you would click, clicked faster. Keyline never reads, sends, or stores your mail or calendar events.
 
 ## Features
 
@@ -28,7 +28,7 @@ Everything works by driving Google's own UI from content scripts: the same butto
 - **Thread navigation**: `j`/`k` between conversations, arrows across message cards, `o` expand/collapse, `:` expand all, `Enter` reply-all, `Escape` exits a reply first, then returns to the list with your cursor and scroll position restored.
 - **Account switching**: `g 0` through `g 8` jump straight to `/mail/u/N/`. Every signed-in account shows up in the palette by email, auto-detected, no setup.
 - **Calendar key**: `0` opens Google Calendar beside Gmail, `0 0` opens it in a new tab, always for the account you are in.
-- **Unified calendar layer**: on Google Calendar, `Cmd/Ctrl+K` opens a layer palette to toggle or focus any calendar, switch accounts, and add more sources, plus single keys (`c` create, `t` today, `←`/`→` (or `j`/`k`) previous/next, `d`/`w`/`m` day/week/month). Two simple add flows pull everything into one view: to add another Google account's calendar, Mailstroke opens Calendar's own "Subscribe to calendar" pane in a new tab and keeps a short guide open with a Refresh button; to add an Outlook/iCal calendar, paste its published `.ics` link. The merge is Google's own (calendar subscription and sharing); Mailstroke just drives the UI and reads no event data.
+- **Unified calendar layer**: on Google Calendar, `Cmd/Ctrl+K` opens a layer palette to toggle or focus any calendar, switch accounts, and add more sources, plus single keys (`c` create, `t` today, `←`/`→` (or `j`/`k`) previous/next, `d`/`w`/`m` day/week/month). Two simple add flows pull everything into one view: to add another Google account's calendar, Keyline opens Calendar's own "Subscribe to calendar" pane in a new tab and keeps a short guide open with a Refresh button; to add an Outlook/iCal calendar, paste its published `.ics` link. The merge is Google's own (calendar subscription and sharing); Keyline just drives the UI and reads no event data.
 
 ## Install
 
@@ -78,7 +78,7 @@ extension/
 
 Two principles explain most of the code:
 
-1. Gmail ignores synthetic keyboard events, so Mailstroke never fakes keystrokes. Every action drives a real Gmail control through a full pointer gesture (`gmail.realClick`).
+1. Gmail ignores synthetic keyboard events, so Keyline never fakes keystrokes. Every action drives a real Gmail control through a full pointer gesture (`gmail.realClick`).
 2. A context classifier (`getContext()`) gates every shortcut (palette, modal, compose, thread, list, search), so keys only fire where they make sense and never steal your typing.
 
 ## Develop and test
