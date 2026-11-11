@@ -58,14 +58,14 @@ Releases publish themselves through `.github/workflows/publish.yml`. You never b
 
 1. Push to `main` (directly or by merging a PR) a change to `extension/manifest.json`, `extension/src/`, or `extension/icons/*.png`. Docs, tests, and tooling changes don't publish.
 2. The `bump` job raises the patch version in `manifest.json`, `package.json`, and `package-lock.json`, commits "Release vX.Y.Z" to `main`, and tags it. Pull before your next change.
-3. The `publish` job checks out that commit, runs the tests, builds the zip, uploads it, and submits it for review.
+3. The `build` job checks out that commit, runs the tests, and builds the zip. The `publish` job uploads it and submits it for review.
 4. Review still takes hours to a few days. Installed copies update themselves after approval.
 
 For a new major or minor line, set `version` in `extension/manifest.json` to `X.Y.0` in your commit; the release from it is `X.Y.1`. Never lower it.
 
 To release without a code change, start the workflow from the Actions tab (**Run workflow**).
 
-The workflow needs five repository secrets: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
+The `publish` job runs in the `chrome-web-store` GitHub environment (Settings, Environments), restricted to the `main` branch. It needs five secrets there: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project. See the security notes at the top of the jobs in `publish.yml`. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
 
 Manual fallback: bump `version` yourself, `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**.
 

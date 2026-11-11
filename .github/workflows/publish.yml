@@ -17,6 +17,17 @@ concurrency:
   group: cws-publish
   cancel-in-progress: false
 
+# Security model (public repo):
+# - Only a push to main or a manual run by someone with write access starts
+#   this. Pull requests, including from forks, never run it and never see
+#   the secrets.
+# - Three jobs, least privilege each: `bump` can write to the repo but has no
+#   secrets and runs no npm; `build` runs the tests and npm dependencies with
+#   no secrets and no write access; `publish` holds the store credentials but
+#   checks out no code and runs no npm, only curl against Google's API on the
+#   zip `build` produced.
+# - The store credentials live in the `chrome-web-store` environment, which
+#   only main may deploy to.
 jobs:
   # Bumps the patch version, commits it to main, and tags it. Pushes made
   # with GITHUB_TOKEN don't trigger workflows, so this commit doesn't loop.
@@ -40,11 +51,10 @@ jobs:
           current=$(jq -r .version extension/manifest.json)
           IFS=. read -r major minor patch <<< "$current"
           version="${major}.${minor}.$((patch + 1))"
-          for f in extension/manifest.json extension/package.json; do
-            tmp=$(mktemp)
-            jq --arg v "$version" '.version = $v' "$f" > "$tmp" && mv "$tmp" "$f"
-          done
-          (cd extension && npm version "$version" --no-git-tag-version --allow-same-version >/dev/null)
+          bump() { tmp=$(mktemp); jq --arg v "$version" "$1" "$2" > "$tmp" && mv "$tmp" "$2"; }
+          bump '.version = $v' extension/manifest.json
+          bump '.version = $v' extension/package.json
+          bump '.version = $v | .packages[""].version = $v' extension/package-lock.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add extension/manifest.json extension/package.json extension/package-lock.json
@@ -60,7 +70,7 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "Released $current -> $version"
 
-  publish:
+  build:
     needs: bump
     runs-on: ubuntu-latest
     permissions:
@@ -79,11 +89,27 @@ jobs:
       - name: Test and package
         working-directory: extension
         run: |
-          npm ci
+          npm ci --ignore-scripts
           ./release.sh
 
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: extension-zip
+          path: extension/dist/keyline-${{ needs.bump.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [bump, build]
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    permissions: {}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: extension-zip
+
       - name: Upload and submit for review
-        working-directory: extension
         env:
           VERSION: ${{ needs.bump.outputs.version }}
           EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
@@ -91,4 +117,40 @@ jobs:
           CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-        run: npx --no-install chrome-webstore-upload --source "dist/keyline-${VERSION}.zip"
+        run: |
+          set -euo pipefail
+          zip="keyline-${VERSION}.zip"
+          item="https://chromewebstore.googleapis.com/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}"
+          upload="https://chromewebstore.googleapis.com/upload/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:upload"
+
+          # Exchange the refresh token for a one-hour access token. The form
+          # body goes through stdin so no secret appears in a process list.
+          token=$(jq -rn --arg id "$CLIENT_ID" --arg s "$CLIENT_SECRET" --arg r "$REFRESH_TOKEN" \
+              '{client_id:$id, client_secret:$s, refresh_token:$r, grant_type:"refresh_token"}' \
+            | curl -sS --fail-with-body -H 'Content-Type: application/json' -d @- \
+                https://oauth2.googleapis.com/token \
+            | jq -r .access_token)
+          echo "::add-mask::$token"
+          hdr=$(mktemp)
+          chmod 600 "$hdr"
+          printf 'Authorization: Bearer %s\n' "$token" > "$hdr"
+          trap 'rm -f "$hdr"' EXIT
+          auth=(-H @"$hdr")
+
+          res=$(curl -sS --fail-with-body "${auth[@]}" \
+            -H 'X-Goog-Upload-Protocol: raw' -H 'X-Goog-Upload-File-Name: extension.zip' \
+            --data-binary @"$zip" "$upload")
+          state=$(jq -r .uploadState <<< "$res")
+          for _ in $(seq 1 30); do
+            [ "$state" = "IN_PROGRESS" ] || break
+            sleep 2
+            state=$(curl -sS --fail-with-body "${auth[@]}" "${item}:fetchStatus" | jq -r .lastAsyncUploadState)
+          done
+          echo "Upload state: $state"
+          if [ "$state" != "SUCCEEDED" ]; then
+            jq . <<< "$res"
+            exit 1
+          fi
+
+          curl -sS --fail-with-body "${auth[@]}" -H 'Content-Type: application/json' \
+            -d '{"publishType":"DEFAULT_PUBLISH"}' "${item}:publish" | jq '{state, name}'
