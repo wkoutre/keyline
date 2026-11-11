@@ -13,7 +13,7 @@ Superhuman costs $30/month and works by reading your entire mailbox through the 
 
 - **No Gmail API.** It never authenticates against your mail. There is no OAuth screen because there is nothing to grant.
 - **No server, no analytics, no AI.** Nothing leaves your browser. There is no backend to trust because there is no backend.
-- **One permission: `storage`.** That's your settings, kept locally, plus host access so the content scripts can run on Gmail and Calendar. You can verify this in `manifest.json` in about ten seconds.
+- **One permission: `storage`.** That's your settings, kept in the browser (and carried between your computers by the browser's own sync, if you have it on), plus host access so the content scripts can run on Gmail and Calendar. You can verify this in `manifest.json` in about ten seconds.
 - **No build step, no dependencies.** The code that runs is the code in this repo. Auditing the whole extension is an afternoon, not a project.
 
 Everything works by driving Google's own UI from content scripts: the same buttons you would click, clicked faster. Keyline never reads, sends, or stores your mail or calendar events.

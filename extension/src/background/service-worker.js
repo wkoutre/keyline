@@ -1,12 +1,7 @@
 // Minimal MV3 service worker. The heavy lifting is in the content script; this
-// just relays popup actions to the active Gmail tab and seeds defaults.
-chrome.runtime.onInstalled.addListener(async () => {
-  const cur = await chrome.storage.local.get(["enabled"]);
-  if (cur.enabled === undefined) {
-    await chrome.storage.local.set({ enabled: true, hotkeysEnabled: true });
-  }
-});
-
+// just relays popup actions to the active Gmail tab. Defaults live in
+// storage.js DEFAULTS (enabled and hotkeysEnabled default on), so nothing is
+// seeded here.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === "inboxkeys:relay") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
