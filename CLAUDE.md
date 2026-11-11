@@ -25,7 +25,9 @@ Chrome MV3. Content scripts share a single `window.InboxKeys` namespace and load
 src/shared/hashutil.js    pure hash helpers (thread detection, parent hash). Unit-tested in Node.
 src/shared/keymap.js      command catalog: ids, titles, default keys, contexts, fixed flag.
                           Loaded both as first content script AND by options.html.
-src/content/storage.js    chrome.storage wrapper + DEFAULTS (tabs, toggles, keyOverrides).
+src/content/storage.js    chrome.storage wrapper + DEFAULTS (tabs, toggles, keyOverrides). Settings live in
+                          chrome.storage.sync; LOCAL_ONLY keys (accountNames, paletteRecents) stay local.
+                          Also loaded by popup.html and options.html; never call chrome.storage directly.
 src/content/toast.js      small toast UI.
 src/content/gmail.js      THE CORE. realClick, getContext, inThread, setHash, reply/replyAll/
                           forward, archive, back, compose, action(), waitFor poll helper, list scroll.
@@ -74,6 +76,15 @@ The real list IS available same-origin, but only as a page (MAIN-world) global: 
 `account-sync.js` (ISOLATED world, mail+calendar) listens for that message (guards `e.source===window`, origin, and an `__inboxkeys` marker), validates every `{index,email}` (integer 0–25, email regex), and merges into the shared `accountNames` map. Because `accountNames` is shared `chrome.storage` and `storage.onChange` is wired, enumerating once on Gmail populates emails for BOTH surfaces — Calendar's `gbar` usually carries only the current account, so Calendar relies on the map Gmail filled. The palettes (`commands.js accountCommands`, `gcal-ui.js accountSwitchCommands`) now show EXACTLY the known accounts (every row an email); only on a cold machine where nothing is known yet do they fall back to the g 0–g 8 slots so switching still works.
 
 Testing: `extractAccounts` is dual-exported (Node branch when `window` is undefined) and unit-tested against synthetic gbar-shaped graphs (`tests/account-bridge.test.js`); the receiver's `ingest` is exposed as `InboxKeys.accountSync.ingest` and tested in the jsdom harness. The full extract→postMessage→validate path was verified live against real Gmail (9 accounts, correct indices). The MAIN-world injection itself can only be confirmed after an extension reload.
+
+## Settings sync (storage.js)
+
+Preferences sync between computers through `chrome.storage.sync`, the browser's own sync. No new permission (`storage` covers both areas), no Keyline account, no server. Rules:
+
+- Every key in `DEFAULTS` syncs unless it is in `LOCAL_ONLY` (`accountNames`: /u/N order differs per machine; `paletteRecents`: changes every palette run and would burn the sync write quota). A new setting syncs by default; add it to `LOCAL_ONLY` only if it describes the machine, not the user.
+- One-time migration per machine (`syncMigrated` in local): pre-sync local values are pushed up only where sync has no value yet, so a second machine adopts the synced setup. `keyOverrides` merges (synced entry wins per command).
+- Quota: a value over `QUOTA_BYTES_PER_ITEM` (8 KB) or any failing sync write (total quota, rate limit) is kept in local and listed in `syncOverflow`; that local copy wins on load until a later sync write of the key succeeds. The user gets a toast and the options page lists the unsynced keys.
+- `onChange` reads each key only from the area that owns it, so stale copies in the other area are ignored. Popup, options and service worker go through `InboxKeys.storage`, never `chrome.storage.*` directly (pinned by `tests/storage.test.js`).
 
 ## The context classifier (gmail.getContext)
 
