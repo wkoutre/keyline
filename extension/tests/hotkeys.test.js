@@ -2886,4 +2886,51 @@ function replyWithGeminiFixture() {
   }
 }
 
+// gmailNativeShortcuts: with Gmail's own shortcuts on, an open thread's e # ! s z
+// go to Gmail untouched (Gmail acts on the trusted key; no toolbar lookup, no
+// hover). Off by default, list view unaffected, and a remapped command keeps
+// going through Keyline.
+{
+  const toolbar = '<div role="toolbar"><div role="button" aria-label="Archive" id="tb-archive"></div></div>';
+  const mk = (cache, hash = "#inbox/" + ID, body = toolbar + threadFixture()) => {
+    const w = load(body, hash);
+    w.InboxKeys.storage.cache = { ...w.InboxKeys.storage.cache, ...cache };
+    const clicked = [];
+    const btn = w.document.getElementById("tb-archive");
+    if (btn) btn.addEventListener("click", () => clicked.push("Archive"));
+    return { w, clicked };
+  };
+
+  // Default (off): Keyline claims e and clicks the toolbar.
+  {
+    const t = mk({});
+    const e = press(t.w, "e", { target: t.w.document.body });
+    assert.equal(e.defaultPrevented, true, "off by default: Keyline claims e");
+    assert.deepEqual(t.clicked, ["Archive"], "off by default: Keyline drives the toolbar");
+  }
+
+  // On: every native thread key passes through untouched.
+  for (const key of ["e", "#", "!", "s", "z"]) {
+    const t = mk({ gmailNativeShortcuts: true });
+    const e = press(t.w, key, { target: t.w.document.body });
+    assert.equal(e.defaultPrevented, false, `on: ${key} reaches Gmail untouched`);
+    assert.deepEqual(t.clicked, [], `on: ${key} does not drive the toolbar`);
+  }
+
+  // On, but archive remapped away from e: e is no longer Keyline's archive key,
+  // and the remapped key still goes through Keyline.
+  {
+    const t = mk({ gmailNativeShortcuts: true, keyOverrides: { archive: ["q"] } });
+    press(t.w, "q", { target: t.w.document.body });
+    assert.deepEqual(t.clicked, ["Archive"], "a remapped archive key still runs through Keyline");
+  }
+
+  // On: Keyline-only thread keys (j/k, u) are still Keyline's.
+  {
+    const t = mk({ gmailNativeShortcuts: true });
+    const e = press(t.w, "j", { target: t.w.document.body });
+    assert.equal(e.defaultPrevented, true, "on: j stays with Keyline");
+  }
+}
+
 console.log("hotkey integration tests passed");
