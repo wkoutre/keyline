@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keyline: keyboard shortcuts & command palette for Gmail",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, and account switching for Gmail and Google Calendar.",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,8 +9,13 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage"],
-  "host_permissions": ["https://mail.google.com/*", "https://calendar.google.com/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://calendar.google.com/*"
+  ],
   "background": {
     "service_worker": "src/background/service-worker.js"
   },
@@ -26,8 +31,12 @@
   "options_page": "src/options/options.html",
   "content_scripts": [
     {
-      "matches": ["https://mail.google.com/*"],
-      "css": ["src/content/palette.css"],
+      "matches": [
+        "https://mail.google.com/*"
+      ],
+      "css": [
+        "src/content/palette.css"
+      ],
       "js": [
         "src/shared/hashutil.js",
         "src/shared/keymap.js",
@@ -48,8 +57,12 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://calendar.google.com/*"],
-      "css": ["src/content/palette.css"],
+      "matches": [
+        "https://calendar.google.com/*"
+      ],
+      "css": [
+        "src/content/palette.css"
+      ],
       "js": [
         "src/shared/hashutil.js",
         "src/shared/keymap.js",
@@ -62,8 +75,13 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://mail.google.com/*", "https://calendar.google.com/*"],
-      "js": ["src/content/account-bridge.js"],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://calendar.google.com/*"
+      ],
+      "js": [
+        "src/content/account-bridge.js"
+      ],
       "world": "MAIN",
       "run_at": "document_idle"
     }
