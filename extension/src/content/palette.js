@@ -55,6 +55,13 @@ window.InboxKeys = window.InboxKeys || {};
     return String(binding || "");
   }
 
+  // The user's palette hotkey (settings), normalized: "Mod+K" by default.
+  function paletteKey() {
+    const raw = (storage && storage.get("paletteHotkey")) || "Mod+K";
+    const KM = window.InboxKeys_KEYMAP;
+    return KM && typeof KM.normalizePaletteHotkey === "function" ? KM.normalizePaletteHotkey(raw) : raw;
+  }
+
   function build() {
     if (root) return;
     root = document.createElement("div");
@@ -73,7 +80,7 @@ window.InboxKeys = window.InboxKeys || {};
         </div>
       </div>`;
     document.documentElement.appendChild(root);
-    root.querySelector(".inboxkeys-prompt").textContent = keyLabel("Mod+K");
+    root.querySelector(".inboxkeys-prompt").textContent = keyLabel(paletteKey());
     input = root.querySelector(".inboxkeys-input");
     results = root.querySelector(".inboxkeys-results");
 
@@ -235,7 +242,7 @@ window.InboxKeys = window.InboxKeys || {};
     chooseItems = null;
     const g = InboxKeys.gmail;
     openCtx = g && g.getContext && !open ? g.getContext() : openCtx;
-    openWith("Type a command or search…", keyLabel("Mod+K"));
+    openWith("Type a command or search…", keyLabel(paletteKey()));
   }
 
   // One-shot picker over arbitrary command-shaped items ({title, group, hint,

@@ -547,7 +547,7 @@ window.InboxKeys = window.InboxKeys || {};
       sections: [
         {
           title: "Command palette",
-          rows: [{ label: "Calendars, accounts and add a source", keys: ["Mod+K"] }],
+          rows: [{ label: "Calendars, accounts and add a source", keys: [paletteKey()] }],
         },
         {
           title: "Move",
@@ -582,11 +582,27 @@ window.InboxKeys = window.InboxKeys || {};
     if (InboxKeys.cheatsheet) InboxKeys.cheatsheet.toggle(cheatsheetSpec);
   }
 
+  // The palette hotkey from settings (shared with Gmail), "Mod+K" by default.
+  function paletteKey() {
+    const raw = (storage && storage.get("paletteHotkey")) || "Mod+K";
+    const KM = window.InboxKeys_KEYMAP;
+    return KM && typeof KM.normalizePaletteHotkey === "function" ? KM.normalizePaletteHotkey(raw) : raw;
+  }
+
+  function matchesPaletteKey(e) {
+    const KM = window.InboxKeys_KEYMAP;
+    if (KM && typeof KM.matchesPaletteHotkey === "function") return KM.matchesPaletteHotkey(e, paletteKey());
+    return (e.metaKey || e.ctrlKey) && String(e.key || "").toLowerCase() === "k";
+  }
+
   function onKeydown(e) {
     const mod = e.metaKey || e.ctrlKey;
     const key = (e.key || "").toLowerCase();
-    if (mod && key === "k") {
-      // Don't steal a browser/site Cmd+K from a focused text field other than ours.
+    if (matchesPaletteKey(e)) {
+      // Cmd+K over selected text in an event description is the editor's
+      // insert-link key: leave it alone unless our overlay is already open.
+      const KM = window.InboxKeys_KEYMAP;
+      if (!overlay && KM && typeof KM.isEditorLinkShortcut === "function" && KM.isEditorLinkShortcut(e, document)) return;
       if (overlay) {
         closeOverlay();
       } else {

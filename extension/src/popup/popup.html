@@ -13,7 +13,7 @@
       </div>
     </div>
 
-    <button class="primary" id="open-palette">Open command palette <kbd>⌘K</kbd></button>
+    <button class="primary" id="open-palette">Open command palette <kbd id="palette-key">⌘K</kbd></button>
 
     <label class="row"><span>Enabled</span><input type="checkbox" id="enabled" /></label>
     <label class="row"><span>Keyboard shortcuts</span><input type="checkbox" id="hotkeysEnabled" /></label>
@@ -23,6 +23,7 @@
     <a class="ghost link" id="open-options" href="#">Settings →</a>
 
     <p class="note" id="note"></p>
+    <script src="../shared/keymap.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

@@ -90,6 +90,12 @@ Two subtleties that caused regressions:
 
 The engine uses a capture-phase keydown listener and `consume(e)` (preventDefault plus stopImmediatePropagation) to claim a key so Gmail never double-handles it. `isEditable(target)` must guard non-Element targets, because a keydown target can be the `document` (no `getAttribute`), which once crashed the handler.
 
+## The palette hotkey (remappable, yields to insert-link)
+
+`storage.paletteHotkey` (default `Mod+K`) is one modified key, recorded in Settings ("Open the command palette" row) and matched by `InboxKeys_KEYMAP.matchesPaletteHotkey` in `keymap.js`, which Gmail (`hotkeys.js`), Calendar (`gcal-ui.js`), the options recorder and the popup all share. Letters and digits match by `e.code`, so Option+K on a Mac (e.key `˚`) works. `normalizePaletteHotkey` upgrades the old dropdown's lowercase values (`mod+k`, `mod+j`, `mod+/`). `paletteHotkeyProblem` refuses a key without Cmd/Ctrl/Option (the palette fires while typing, so a bare key would eat text), browser/editing keys (Cmd+C/V/X/A/Z/T/W/N/...), and keys already bound to a Keyline command.
+
+Insert-link rule: Cmd/Ctrl+K inside a contenteditable editor WITH a non-empty selection inside that editor (`isEditorLinkShortcut`) is left unconsumed so Gmail's (and Calendar's) own insert-link handles it. With just a caret, Cmd+K still opens the palette; with the palette already open, it still closes it. Remapping the palette key makes Cmd+K entirely Gmail's.
+
 ## Hash routing (hashutil.js)
 
 Gmail routes everything through the URL hash. The conversation id is always the LAST slash-separated segment, no matter how many list/query/label segments precede it:
@@ -224,7 +230,7 @@ Live-testing safety: when testing against real Gmail, take no destructive action
 
 ## What works today (0.3.5)
 
-- Cmd+K command palette, fuzzy search over all actions.
+- Cmd+K command palette, fuzzy search over all actions. The key is remappable in Settings, and Cmd+K over selected text in the editor is left to Gmail's insert-link.
 - Hotkeys and g-prefixed chords (g i inbox, g t sent, g d drafts, g a all mail, g h snoozed, etc.).
 - Per-command key remapping via the options page (`keyOverrides` in storage); engine-special-cased keys are shown read-only.
 - Account switching g0 through g8 to /mail/u/N, with palette entries labelled by email for EVERY signed-in account (auto-enumerated from the OneGoogle bar on Gmail and shared to Calendar; see "Account enumeration"). Manual "Configure accounts…" remains as an override/fallback.
