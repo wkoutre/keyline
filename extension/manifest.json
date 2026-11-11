@@ -43,6 +43,7 @@
         "src/content/storage.js",
         "src/content/account-sync.js",
         "src/content/toast.js",
+        "src/content/cheatsheet.js",
         "src/content/gmail.js",
         "src/content/accounts.js",
         "src/content/calendar.js",
@@ -69,6 +70,7 @@
         "src/content/storage.js",
         "src/content/account-sync.js",
         "src/content/toast.js",
+        "src/content/cheatsheet.js",
         "src/content/gcal.js",
         "src/content/gcal-ui.js"
       ],

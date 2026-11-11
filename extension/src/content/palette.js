@@ -116,13 +116,34 @@ window.InboxKeys = window.InboxKeys || {};
     run(active);
   }
 
+  // What the palette lists for a query. A picker (choose) lists only its items.
+  // The command palette lists: with no query, recent rows first, then every
+  // command; with a query, commands plus labels and people on screen (recent
+  // ones ranked a little higher), then a "Search mail for …" row last.
+  function candidates(q) {
+    const rank = (pool, boost) =>
+      pool
+        .map((cmd) => ({ cmd, s: score(q, title(cmd) + " " + (cmd.searchText || "") + " " + (cmd.group || "")) }))
+        .filter((x) => x.s > 0)
+        .map((x) => (boost && boost.has(x.cmd.id) ? { cmd: x.cmd, s: x.s + 3 } : x))
+        .sort((a, b) => b.s - a.s)
+        .map((x) => x.cmd);
+    if (chooseItems) return rank(chooseItems);
+    const here = (cmd) => offeredIn(cmd, openCtx);
+    const recent = (commands.recent ? commands.recent() : []).filter(here);
+    const registry = commands.all().filter(here);
+    if (!q) {
+      const ids = new Set(recent.map((c) => c.id));
+      return [...recent, ...registry.filter((c) => !ids.has(c.id))];
+    }
+    const jump = (commands.jumpCommands ? commands.jumpCommands() : []).filter(here);
+    const tail = commands.queryCommands ? commands.queryCommands(q) : [];
+    return [...rank([...registry, ...jump], new Set(recent.map((c) => c.id))), ...tail];
+  }
+
   function render(keepQuery) {
     const q = input.value.trim();
-    const scored = (chooseItems || commands.all().filter((cmd) => offeredIn(cmd, openCtx)))
-      .map((cmd) => ({ cmd, s: score(q, title(cmd) + " " + (cmd.searchText || "") + " " + (cmd.group || "")) }))
-      .filter((x) => x.s > 0)
-      .sort((a, b) => b.s - a.s);
-    items = scored.map((x) => x.cmd);
+    items = candidates(q);
     if (!keepQuery) active = 0;
     if (active >= items.length) active = 0;
 
@@ -169,7 +190,9 @@ window.InboxKeys = window.InboxKeys || {};
   function run(i) {
     const cmd = items[i];
     if (!cmd) return;
+    const fromRegistry = !chooseItems;
     hide();
+    if (fromRegistry && commands.remember) commands.remember(cmd);
     // Defer so the palette is fully gone before Gmail handles focus/keys.
     setTimeout(() => {
       try {
@@ -193,6 +216,7 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   function show() {
+    if (InboxKeys.cheatsheet) InboxKeys.cheatsheet.hide();
     chooseItems = null;
     const g = InboxKeys.gmail;
     openCtx = g && g.getContext && !open ? g.getContext() : openCtx;

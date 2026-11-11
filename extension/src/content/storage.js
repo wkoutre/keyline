@@ -16,6 +16,11 @@ window.InboxKeys = window.InboxKeys || {};
     // keystroke reach Gmail for the keys it already handles natively (see
     // NATIVE_THREAD_KEYS in hotkeys.js) instead of driving its toolbar.
     gmailNativeShortcuts: false,
+    // After archive/delete/snooze/spam/mute in an open conversation, open the
+    // next (older) conversation instead of returning to the list.
+    autoAdvance: true,
+    // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
+    paletteRecents: [],
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special
     // landing tab. The user edits these from the gear in the tab bar.
     tabs: [

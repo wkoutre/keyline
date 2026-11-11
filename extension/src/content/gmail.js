@@ -106,6 +106,12 @@ window.InboxKeys = window.InboxKeys || {};
     // Gemini's "Describe your message" (Help me write) box shares it. See
     // composeEditors().
     composeBodyMarked: 'div[aria-label="Message Body"], div[g_editable="true"]',
+    // a person chip carrying the address: list rows render each participant as
+    // <span email="x@y" name="X">, a card header's sender as span.gD[email]
+    personEmail: "span[email]",
+    cardSender: ".gD[email]",
+    // left-nav label links (#label/<name>), for "jump to label" in Cmd+K
+    navLabel: 'a[href*="#label/"]',
   };
 
   // First visible match for a selector, or null.
@@ -322,6 +328,9 @@ window.InboxKeys = window.InboxKeys || {};
   // silently.
   function clickOr(el, what) {
     if (realClick(el)) return true;
+    // A failed action must not leave auto-advance armed: a later manual return
+    // to the list would otherwise jump into another conversation.
+    if (InboxKeys.listnav && InboxKeys.listnav.disarmAdvance) InboxKeys.listnav.disarmAdvance();
     if (InboxKeys.toast) InboxKeys.toast(`Gmail control not found: ${what}`, { kind: "warn" });
     return false;
   }
@@ -730,6 +739,88 @@ window.InboxKeys = window.InboxKeys || {};
     return null;
   }
 
+  // ---- Senders and search ----------------------------------------------
+
+  function personOf(el) {
+    if (!el) return null;
+    const email = (el.getAttribute("email") || "").trim();
+    if (!/^[^\s@]+@[^\s@]+$/.test(email)) return null;
+    return { email, name: (el.getAttribute("name") || el.textContent || "").trim() || email };
+  }
+
+  // The sender of a list row: the first participant chip that isn't you (a
+  // "me, Bob (3)" row lists you first). Falls back to the first chip, so a row
+  // where you are the only participant still resolves.
+  function senderOfRow(row) {
+    if (!row) return null;
+    const me = (currentEmail() || "").toLowerCase();
+    const people = Array.from(row.querySelectorAll(SEL.personEmail)).map(personOf).filter(Boolean);
+    return people.find((p) => p.email.toLowerCase() !== me) || people[0] || null;
+  }
+
+  // The sender of a message card (the header's .gD chip), else any address chip
+  // in its header. With no card, the LAST expanded card of the open thread.
+  function senderOfCard(card) {
+    const scope = card && card.nodeType === 1 ? card : null;
+    const cards = scope ? [scope] : threadCards().slice().reverse();
+    for (const c of cards) {
+      const hit = personOf(c.querySelector(SEL.cardSender)) || personOf(c.querySelector(SEL.cardHeader + " " + SEL.personEmail));
+      if (hit) return hit;
+    }
+    return scope ? null : personOf(document.querySelector('[role="main"] ' + SEL.cardSender));
+  }
+
+  function domainOf(email) {
+    const m = String(email || "").match(/@([^@\s]+)$/);
+    return m ? m[1].toLowerCase() : null;
+  }
+
+  // Run a Gmail search through its own hash router (#search/<query>).
+  function search(query) {
+    setHash("search/" + encodeURIComponent(query));
+    return true;
+  }
+
+  // The left-nav labels: [{ name, hash }], read from the nav links' hrefs so the
+  // name is the real label path ("Clients/Acme"), not a truncated display text.
+  function navLabels() {
+    const out = [];
+    const seen = new Set();
+    for (const a of document.querySelectorAll(SEL.navLabel)) {
+      const m = (a.getAttribute("href") || "").match(/#label\/([^/?]+)/);
+      if (!m) continue;
+      let name;
+      try {
+        name = decodeURIComponent(m[1].replace(/\+/g, " "));
+      } catch {
+        name = m[1];
+      }
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      out.push({ name, hash: "label/" + m[1] });
+    }
+    return out;
+  }
+
+  // People visible on screen (list rows and open message headers), deduped by
+  // address, excluding you: the "jump to a contact" rows in Cmd+K.
+  function visiblePeople(limit = 40) {
+    const me = (currentEmail() || "").toLowerCase();
+    const out = [];
+    const seen = new Set();
+    const sel = SEL.listRow + " " + SEL.personEmail + ", [role=\"main\"] " + SEL.cardSender;
+    for (const el of document.querySelectorAll(sel)) {
+      const p = personOf(el);
+      if (!p) continue;
+      const key = p.email.toLowerCase();
+      if (key === me || seen.has(key)) continue;
+      seen.add(key);
+      out.push(p);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
   // The active compose editor body (contenteditable).
   // Textboxes that LOOK like a compose editor but are Gemini/assistant prompts
   // (the "Describe your message" box under an open reply, "Help me write", the
@@ -825,6 +916,8 @@ window.InboxKeys = window.InboxKeys || {};
   // keyboard events (isTrusted === false) for native navigation, so a fake "u"
   // silently does nothing. Hash routing is trusted and always works.
   function back() {
+    // Going back is the user leaving on purpose: never auto-advance from it.
+    if (InboxKeys.listnav && InboxKeys.listnav.disarmAdvance) InboxKeys.listnav.disarmAdvance();
     const parent = InboxKeys.hashutil.parentHash(location.hash || "");
     const sels = [
       '[aria-label^="Back to"]',
@@ -1171,11 +1264,22 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   // Older = next (further down the list), Newer = previous.
+  // Each step also tells listnav, so the saved list position (Escape's return
+  // spot and auto-advance's anchor) follows the conversation you're reading.
+  function stepThread(label, what, dir) {
+    return clickControl(() => exactButton(label), what, {
+      onClick: (btn) => {
+        if (btn.getAttribute("aria-disabled") !== "true" && InboxKeys.listnav && InboxKeys.listnav.stepReturn) {
+          InboxKeys.listnav.stepReturn(dir);
+        }
+      },
+    });
+  }
   function nextThread() {
-    return clickControl(() => exactButton("Older"), "Older (next conversation)");
+    return stepThread("Older", "Older (next conversation)", 1);
   }
   function prevThread() {
-    return clickControl(() => exactButton("Newer"), "Newer (previous conversation)");
+    return stepThread("Newer", "Newer (previous conversation)", -1);
   }
 
   // List pager: in a list view Gmail's "Older"/"Newer" toolbar buttons step to the
@@ -1353,6 +1457,9 @@ window.InboxKeys = window.InboxKeys || {};
     { name: "card headers", sel: '[role="main"] ' + SEL.card + " " + SEL.cardHeader, requiredIn: "thread" },
     { name: "message bodies", sel: '[role="main"] ' + SEL.messageBody, requiredIn: "thread" },
     { name: "inline reply links (.ams)", sel: SEL.inlineActions, requiredIn: "thread" },
+    { name: "row sender chips", sel: SEL.listRow + " " + SEL.personEmail, requiredIn: "list" },
+    { name: "card sender", sel: '[role="main"] ' + SEL.cardSender, requiredIn: "thread" },
+    { name: "nav label links", sel: SEL.navLabel, requiredIn: "always" },
   ];
 
   function verifySelectors() {
@@ -1468,6 +1575,12 @@ window.InboxKeys = window.InboxKeys || {};
     removeAllLabels,
     openMoveMenu,
     currentEmail,
+    senderOfRow,
+    senderOfCard,
+    domainOf,
+    search,
+    navLabels,
+    visiblePeople,
     composeBody,
     composeRecipients,
     composeSubject,

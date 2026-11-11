@@ -51,6 +51,47 @@ window.InboxKeys = window.InboxKeys || {};
     return action();
   }
 
+  // In an open conversation, run a thread-removing action with auto-advance
+  // armed (see listnav.advancing). Snooze gets a longer window because Gmail
+  // only returns to the list after you pick a time in its picker.
+  function advancing(action, ms) {
+    return () => {
+      if (gmail.getContext() === "threadView" && InboxKeys.listnav && InboxKeys.listnav.advancing) {
+        return InboxKeys.listnav.advancing(action, ms);
+      }
+      return action();
+    };
+  }
+
+  // "All mail from this sender / domain": the focused message's sender in a
+  // conversation, the cursor row's sender in the list.
+  function currentSender() {
+    if (gmail.getContext() === "threadView") {
+      const card = InboxKeys.threadnav && InboxKeys.threadnav.currentCard ? InboxKeys.threadnav.currentCard() : null;
+      return gmail.senderOfCard(card) || gmail.senderOfCard(null);
+    }
+    const row = InboxKeys.listnav && InboxKeys.listnav.cursorRow ? InboxKeys.listnav.cursorRow() : null;
+    if (!row) return undefined; // no conversation at all
+    return gmail.senderOfRow(row);
+  }
+
+  function mailFrom(kind) {
+    const who = currentSender();
+    if (who === undefined) {
+      InboxKeys.toast("No conversation selected", { kind: "warn" });
+      return false;
+    }
+    if (!who) {
+      InboxKeys.toast("Couldn't find this conversation's sender", { kind: "warn" });
+      return false;
+    }
+    if (kind === "domain") {
+      const domain = gmail.domainOf(who.email);
+      return gmail.search("from:" + domain);
+    }
+    return gmail.search("from:" + who.email);
+  }
+
   // Rebuilt each time the palette opens so key overrides stay current.
   function buildBase() {
     return [
@@ -64,17 +105,17 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("discard-draft", () => gmail.discardDraft()),
 
       // Triage (archive is context-aware: open thread vs. selected/cursor rows)
-      cmd("archive", () => (gmail.getContext() === "threadView" ? gmail.archiveThread() : InboxKeys.listnav.archive())),
+      cmd("archive", () => (gmail.getContext() === "threadView" ? advancing(() => gmail.archiveThread())() : InboxKeys.listnav.archive())),
       cmd("mark-not-done", () => listSelectionAction(() => gmail.markNotDone())),
-      cmd("delete", () => (gmail.getContext() === "threadView" ? gmail.action(["Delete"], "Delete") : InboxKeys.listnav.trash())),
+      cmd("delete", () => (gmail.getContext() === "threadView" ? advancing(() => gmail.action(["Delete"], "Delete"))() : InboxKeys.listnav.trash())),
       cmd("undo", () => gmail.undo()),
       cmd("mark-read-unread", () => (gmail.getContext() === "inboxList" ? InboxKeys.listnav.markReadUnread() : gmail.markReadUnread())),
       cmd("mark-read", () => gmail.action(["Mark as read"])),
       cmd("mark-unread", () => gmail.action(["Mark as unread"])),
-      cmd("snooze", () => (gmail.getContext() === "inboxList" ? InboxKeys.listnav.snooze() : gmail.snooze())),
-      cmd("report-spam", () => gmail.action(["Report spam"])),
+      cmd("snooze", () => (gmail.getContext() === "inboxList" ? InboxKeys.listnav.snooze() : advancing(() => gmail.snooze(), 60000)())),
+      cmd("report-spam", advancing(() => gmail.action(["Report spam"]))),
       cmd("star", () => (gmail.getContext() === "threadView" ? gmail.toggleStar(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.toggleStar())),
-      cmd("mute", () => listSelectionAction(() => gmail.mute())),
+      cmd("mute", advancing(() => listSelectionAction(() => gmail.mute()))),
       cmd("unsubscribe", () => gmail.unsubscribe()),
       cmd("label", () => listSelectionAction(() => gmail.openLabelMenu())),
       cmd("remove-label", () => listSelectionAction(() => gmail.removeLabel())),
@@ -127,7 +168,74 @@ window.InboxKeys = window.InboxKeys || {};
           gmail.setHash("search/");
         }
       }),
+      cmd("mail-from-sender", () => mailFrom("sender")),
+      cmd("mail-from-domain", () => mailFrom("domain")),
+
+      // Help
+      cmd("shortcuts-help", () => InboxKeys.cheatsheet.toggle(cheatsheetSpec)),
     ];
+  }
+
+  // ---- "?" cheat sheet ------------------------------------------------------
+  // Keys the engine handles directly (hotkeys.js), which have no catalog row.
+  const ENGINE_SECTIONS = [
+    {
+      title: "Command palette",
+      rows: [
+        { label: "Open the command palette", keys: ["Mod+K"] },
+      ],
+    },
+    {
+      title: "Message list",
+      rows: [
+        { label: "Move cursor down / up", keys: ["j", "k"] },
+        { label: "Move cursor", keys: ["ArrowDown", "ArrowUp"] },
+        { label: "Grow / shrink selection", keys: ["Shift+ArrowDown", "Shift+ArrowUp"] },
+        { label: "Select row", keys: ["x"] },
+        { label: "Open conversation", keys: ["Enter"] },
+        { label: "Clear selection", keys: ["Escape"] },
+      ],
+    },
+    {
+      title: "Conversation",
+      rows: [
+        { label: "Next / previous conversation", keys: ["j", "k"] },
+        { label: "Move between messages", keys: ["ArrowDown", "ArrowUp"] },
+        { label: "Expand / collapse all", keys: [":"] },
+        { label: "Leave reply, then back to list", keys: ["Escape"] },
+      ],
+    },
+    {
+      title: "Accounts",
+      rows: [{ label: "Switch to account 0 to 8", keys: ["g 0", "g 8"] }],
+    },
+  ];
+
+  const SHEET_GROUP_ORDER = ["Triage", "Compose", "Labels", "Go to", "Search", "Navigation", "Tabs", "Calendar", "Help"];
+
+  // Built when the sheet opens, so remapped keys show as remapped.
+  function cheatsheetSpec() {
+    const groups = new Map();
+    for (const c of buildBase()) {
+      if (!c.keys || !c.keys.length) continue;
+      if (!groups.has(c.group)) groups.set(c.group, []);
+      groups.get(c.group).push({ label: c.title, keys: c.keys });
+    }
+    const ordered = [...groups.keys()].sort((a, b) => {
+      const ia = SHEET_GROUP_ORDER.indexOf(a);
+      const ib = SHEET_GROUP_ORDER.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+    const hotkey = (storage.get("paletteHotkey") || "mod+k")
+      .split("+")
+      .map((part) => (part === "mod" ? "Mod" : part.toUpperCase()))
+      .join("+");
+    const paletteSection = { title: "Command palette", rows: [{ label: "Open the command palette", keys: [hotkey] }] };
+    return {
+      title: "Keyline keyboard shortcuts",
+      sections: [paletteSection, ...ENGINE_SECTIONS.slice(1, 3), ...ordered.map((g) => ({ title: g, rows: groups.get(g) })), ENGINE_SECTIONS[3]],
+      footer: "Remap any key in Keyline settings. Everything here is also in the command palette.",
+    };
   }
 
   // Split-inbox tabs: a "Go to <tab>" row per saved tab.
@@ -228,6 +336,66 @@ window.InboxKeys = window.InboxKeys || {};
     return rows;
   }
 
+  // ---- Cmd+K jump: labels, people, free-text search, recents --------------
+
+  function hashRow(id, title, group, hash, extra) {
+    return Object.assign(
+      { id, title, group, keys: [], contexts: InboxKeys_KEYMAP.DEFAULT_CONTEXTS, hash, run: () => gmail.setHash(hash) },
+      extra || {}
+    );
+  }
+
+  // Rows that only make sense once you type: every label in the left nav and
+  // every person on screen. Offered when the palette has a query, so the
+  // default (empty) palette stays a short command list.
+  function jumpCommands() {
+    const labels = gmail.navLabels().map((l) => hashRow("label:" + l.name, "Go to label: " + l.name, "Labels", l.hash));
+    const people = gmail.visiblePeople().map((p) =>
+      hashRow(
+        "person:" + p.email.toLowerCase(),
+        "Conversations with " + p.name,
+        "People",
+        "search/" + encodeURIComponent(`from:${p.email} OR to:${p.email}`),
+        { hint: p.name === p.email ? "" : p.email, searchText: p.email }
+      )
+    );
+    return [...labels, ...people];
+  }
+
+  // The always-last row for a typed query: run it as a Gmail search.
+  function queryCommands(query) {
+    const q = String(query || "").trim();
+    if (!q) return [];
+    return [hashRow("search-query:" + q, `Search mail for "${q}"`, "Search", "search/" + encodeURIComponent(q), { always: true })];
+  }
+
+  const RECENT_MAX = 8;
+
+  // Recently run palette rows, most recent first, resolved against the live
+  // registry (so keys and titles are current). A row that isn't in the live
+  // registry (a label or person no longer on screen, a past search) comes back
+  // from its saved hash, so recents survive navigation.
+  function recent() {
+    const saved = storage.get("paletteRecents") || [];
+    const live = [...all(), ...jumpCommands()];
+    const out = [];
+    for (const r of saved) {
+      if (!r || !r.id) continue;
+      const hit = live.find((c) => c.id === r.id);
+      if (hit) out.push(Object.assign({}, hit, { group: "Recent" }));
+      else if (r.hash) out.push(hashRow(r.id, r.title, "Recent", r.hash));
+    }
+    return out;
+  }
+
+  function remember(cmd) {
+    if (!cmd || !cmd.id) return;
+    const entry = { id: cmd.id, title: typeof cmd.title === "function" ? cmd.title() : cmd.title };
+    if (cmd.hash) entry.hash = cmd.hash;
+    const prev = (storage.get("paletteRecents") || []).filter((r) => r && r.id !== cmd.id);
+    storage.set({ paletteRecents: [entry, ...prev].slice(0, RECENT_MAX) });
+  }
+
   // Built fresh each time the palette opens so tab/account/override state is current.
   function all() {
     return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...accountCommands(), ...extra];
@@ -250,6 +418,11 @@ window.InboxKeys = window.InboxKeys || {};
   // `base` is kept as a getter so callers always see current overrides applied.
   InboxKeys.commands = {
     all,
+    jumpCommands,
+    queryCommands,
+    recent,
+    remember,
+    cheatsheetSpec,
     register,
     byKeys,
     get base() {

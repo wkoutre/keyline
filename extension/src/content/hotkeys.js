@@ -374,7 +374,12 @@ window.InboxKeys = window.InboxKeys || {};
     // Below here we never fire while typing. Modifier chords are allowed for
     // user-configured shortcuts as long as focus is outside editable fields.
     if (isEditable(e.target) && !canOverrideEditable(e, ctx)) return;
-    if (passToGmailNatively(e, ctx)) return;
+    if (passToGmailNatively(e, ctx)) {
+      // Gmail archives/deletes/spams on the real keystroke and returns to the
+      // list; arm auto-advance so that return opens the next conversation.
+      if (e.key === "e" || e.key === "#" || e.key === "!") listnav.armAdvance();
+      return;
+    }
     const hasNonShiftModifier = e.metaKey || e.ctrlKey || e.altKey;
 
     // Thread view: j/k move between conversations. Arrows move the visible cursor
@@ -393,7 +398,11 @@ window.InboxKeys = window.InboxKeys || {};
       if (e.key.toLowerCase() === "o" && e.shiftKey) { consume(e); threadnav.expandAllToggle(); return; }
       if (e.key.toLowerCase() === "o" && commandHasKey("expand-message", "o")) { consume(e); threadnav.toggleFocused(); return; }
       if (e.key === ":" || e.key === ";") { consume(e); threadnav.expandAllToggle(); return; }
-      if (e.key.toLowerCase() === "e" && !e.shiftKey && commandHasKey("archive", "e")) { consume(e); gmail.archiveThread(); return; }
+      if (e.key.toLowerCase() === "e" && !e.shiftKey && commandHasKey("archive", "e")) {
+        consume(e);
+        listnav.advancing(() => gmail.archiveThread());
+        return;
+      }
       if (e.key.toLowerCase() === "r" && !e.shiftKey && commandHasKey("reply", "r")) { consume(e); gmail.replyToThread(); return; }
     }
 

@@ -644,11 +644,110 @@ window.InboxKeys = window.InboxKeys || {};
     );
   }
 
+  // A mouse click that opens a row records where it was, exactly like Enter
+  // does, so returning (Escape) and auto-advance know the opened row's position
+  // even when the conversation was opened with the mouse. Clicks on the row's
+  // own controls (checkbox, star, hover buttons) don't open it and are ignored.
+  document.addEventListener(
+    "click",
+    (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const row = t.closest(gmail.SEL.listRow);
+      if (!row || t.closest('[role="checkbox"], [role="button"], button, [aria-label*="star" i]')) return;
+      const r = rows();
+      const i = r.indexOf(row);
+      if (i < 0) return;
+      cursor = i;
+      pendingReturnState = captureReturnState(location.hash || "#inbox", row);
+    },
+    true
+  );
+
+  // ---- Auto-advance -------------------------------------------------------
+  // After an action that removes the open conversation (archive, delete,
+  // snooze, spam, mute), Gmail returns to the list. When armed, that return
+  // opens the NEXT conversation (the row that was below the one we left, i.e.
+  // Gmail's "Older") instead of landing on the list. It rides on returnState,
+  // which already knows the opened row's index and thread id. Armed per action,
+  // with a deadline: archive/delete return at once, snooze only after the user
+  // picks a time in Gmail's picker. Escape (gmail.back) disarms it, and so does
+  // any hash change that is not the return to that list (e.g. Gmail's own
+  // auto-advance setting jumping straight to another conversation).
+  let advance = null; // { parent, until }
+
+  function armAdvance(ms = 8000) {
+    const hash = location.hash || "";
+    if (!InboxKeys.hashutil.hashIsThread(hash)) return false;
+    const storage = InboxKeys.storage;
+    if (storage && storage.get("autoAdvance") === false) return false;
+    advance = { parent: InboxKeys.hashutil.parentHash(hash), until: Date.now() + ms };
+    return true;
+  }
+
+  function disarmAdvance() {
+    advance = null;
+  }
+
+  // Run a thread-removing action with auto-advance armed around it. A failed
+  // action (returns false: control not found) disarms, so a toast-and-nothing
+  // can't turn a later manual return into a surprise jump.
+  function advancing(action, ms) {
+    const armed = armAdvance(ms);
+    const result = action();
+    if (armed && result === false) disarmAdvance();
+    return result;
+  }
+
+  function advanceFrom(want) {
+    waitFor(
+      () => (rows().length ? true : null),
+      () => {
+        const r = rows();
+        // The row we left may still be on screen (Gmail removes it a beat later,
+        // or a search still matches it after archive): then the next one is just
+        // below it. Otherwise the next conversation slid up into its index.
+        let idx = want.cursor;
+        if (want.threadId) {
+          const found = r.findIndex((row) => threadIdOf(row) === want.threadId);
+          if (found >= 0) idx = found + 1;
+        }
+        if (idx < 0) idx = 0;
+        if (idx >= r.length) {
+          cursor = r.length - 1;
+          paint(r);
+          if (InboxKeys.toast) InboxKeys.toast("No more conversations", { kind: "info" });
+          return;
+        }
+        cursor = idx;
+        keyNavSeq = ++evSeq;
+        paint(r);
+        open();
+      },
+      // The list stayed empty: that was the last conversation.
+      () => {
+        if (InboxKeys.toast) InboxKeys.toast("No more conversations", { kind: "info" });
+      }
+    );
+  }
+
+  // j/k inside a conversation step to the next/previous row of the list it was
+  // opened from; keep the saved position in step so Escape and auto-advance
+  // work from the conversation you are actually reading.
+  function stepReturn(dir) {
+    if (!returnState) return;
+    if (returnState.parent !== InboxKeys.hashutil.parentHash(location.hash || "")) return;
+    returnState.cursor = Math.max(0, (returnState.cursor < 0 ? 0 : returnState.cursor) + dir);
+    returnState.threadId = null;
+  }
+
   window.addEventListener("hashchange", () => {
     const prev = lastHash;
     const now = location.hash;
     lastHash = now;
     const { hashutil } = InboxKeys;
+    const adv = advance && advance.parent === now && Date.now() <= advance.until ? advance : null;
+    advance = null; // one shot: any navigation consumes or cancels it
     if (hashutil.hashIsThread(now)) {
       const parent = hashutil.parentHash(now);
       if (pendingReturnState && pendingReturnState.parent === parent) {
@@ -672,7 +771,8 @@ window.InboxKeys = window.InboxKeys || {};
       const want = returnState;
       returnState = null;
       reset();
-      restoreReturn(want);
+      if (adv) advanceFrom(want);
+      else restoreReturn(want);
       return;
     }
     // A fresh list (navigation, account switch) starts the cursor over.
@@ -680,5 +780,5 @@ window.InboxKeys = window.InboxKeys || {};
     reset();
   });
 
-  InboxKeys.listnav = { move, extend, open, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page };
+  InboxKeys.listnav = { move, extend, open, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page, cursorRow, armAdvance, disarmAdvance, advancing, stepReturn };
 })();

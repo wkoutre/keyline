@@ -640,3 +640,87 @@ tr.zA.inboxkeys-cursor > td:first-child { box-shadow: inset 4px 0 0 0 #4f46e5 !i
 [role="main"] .inboxkeys-msg-cursor {
   box-shadow: inset 3px 0 0 0 #1a73e8 !important;
 }
+
+/* "?" keyboard shortcut cheat sheet (Gmail and Calendar). */
+.inboxkeys-cheatsheet {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.inboxkeys-cheatsheet-panel {
+  margin-top: 6vh;
+  width: min(980px, 94vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(2, 6, 23, 0.35), 0 2px 8px rgba(2, 6, 23, 0.2);
+  padding: 18px 22px 16px;
+  animation: inboxkeys-pop 0.12s ease-out;
+}
+.inboxkeys-cheatsheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.inboxkeys-cheatsheet-title { font-size: 17px; font-weight: 600; }
+.inboxkeys-cheatsheet-close { font-size: 12px; color: #64748b; }
+.inboxkeys-cheatsheet-grid {
+  columns: 3 260px;
+  column-gap: 28px;
+}
+.inboxkeys-cheatsheet-section {
+  break-inside: avoid;
+  margin: 0 0 16px;
+}
+.inboxkeys-cheatsheet-section h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.inboxkeys-cheatsheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+.inboxkeys-cheatsheet-label { color: #0f172a; }
+.inboxkeys-cheatsheet-keys { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.inboxkeys-cheatsheet-or { font-size: 11px; color: #94a3b8; margin: 0 3px; }
+.inboxkeys-cheatsheet kbd {
+  font: 11px ui-monospace, Menlo, Consolas, monospace;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  min-width: 10px;
+  text-align: center;
+}
+.inboxkeys-cheatsheet-footer {
+  border-top: 1px solid #eef2f7;
+  padding-top: 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+@media (prefers-color-scheme: dark) {
+  .inboxkeys-cheatsheet-panel { background: #1f1f24; color: #f2f2f4; }
+  .inboxkeys-cheatsheet-label { color: #f2f2f4; }
+  .inboxkeys-cheatsheet kbd { background: #17171b; color: #cfcfd6; border-color: #4a4a55; }
+  .inboxkeys-cheatsheet-footer { border-color: #2f2f37; }
+}

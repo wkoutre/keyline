@@ -69,6 +69,11 @@
 
     // Search
     { id: "search", title: "Search mail…", group: "Search", defaultKeys: ["/"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "mail-from-sender", title: "All mail from this sender", group: "Search", defaultKeys: ["g f"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "mail-from-domain", title: "All mail from this sender's domain", group: "Search", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
+
+    // Help
+    { id: "shortcuts-help", title: "Show keyboard shortcuts", group: "Help", defaultKeys: ["?"], contexts: DEFAULT_CONTEXTS, fixed: false },
   ];
 
   function keysFor(id, overrides) {

@@ -85,6 +85,7 @@ window.InboxKeys = window.InboxKeys || {};
     cmds.push({ id: "view-week", title: "Go to week view", kind: "nav", key: "w", run: () => gcal.view("Week") });
     cmds.push({ id: "view-month", title: "Go to month view", kind: "nav", key: "m", run: () => gcal.view("Month") });
     cmds.push({ id: "create", title: "Create event", kind: "nav", key: "c", run: () => gcal.createEvent() });
+    cmds.push({ id: "shortcuts", title: "Show keyboard shortcuts", kind: "nav", key: "?", run: showShortcuts });
     return cmds;
   }
 
@@ -539,6 +540,48 @@ window.InboxKeys = window.InboxKeys || {};
     m: () => gcal.view("Month"),
   };
 
+  // The "?" sheet for Calendar: our keys, plus a pointer to Calendar's own.
+  function cheatsheetSpec() {
+    return {
+      title: "Keyline keys for Google Calendar",
+      sections: [
+        {
+          title: "Command palette",
+          rows: [{ label: "Calendars, accounts and add a source", keys: ["Mod+K"] }],
+        },
+        {
+          title: "Move",
+          rows: [
+            { label: "Go back a period", keys: ["ArrowLeft", "k"] },
+            { label: "Go forward a period", keys: ["ArrowRight", "j"] },
+            { label: "Go to today", keys: ["t"] },
+          ],
+        },
+        {
+          title: "View",
+          rows: [
+            { label: "Day view", keys: ["d"] },
+            { label: "Week view", keys: ["w"] },
+            { label: "Month view", keys: ["m"] },
+          ],
+        },
+        {
+          title: "Create",
+          rows: [{ label: "Create event", keys: ["c"] }],
+        },
+        {
+          title: "Help",
+          rows: [{ label: "Show this sheet", keys: ["?"] }],
+        },
+      ],
+      footer: "Calendar's own shortcuts (n, p, y, a, g, 1 to 9…) keep working alongside these.",
+    };
+  }
+
+  function showShortcuts() {
+    if (InboxKeys.cheatsheet) InboxKeys.cheatsheet.toggle(cheatsheetSpec);
+  }
+
   function onKeydown(e) {
     const mod = e.metaKey || e.ctrlKey;
     const key = (e.key || "").toLowerCase();
@@ -560,6 +603,14 @@ window.InboxKeys = window.InboxKeys || {};
     if ((overlay || inputOverlay) && e.key === "Escape") {
       closeOverlay();
       closeInput();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    // "?" (Shift+/) opens the cheat sheet. Same guards as the single keys
+    // below, except that it is a shifted key by nature.
+    if (e.key === "?" && !mod && !e.altKey && !overlay && !inputOverlay && !isTyping(e.target) && !e.defaultPrevented) {
+      showShortcuts();
       e.preventDefault();
       e.stopImmediatePropagation();
       return;
@@ -623,5 +674,5 @@ window.InboxKeys = window.InboxKeys || {};
     boot();
   }
 
-  InboxKeys.gcalui = { calendarCommands, filterCommands, openOverlay, renderNudge, onKeydown };
+  InboxKeys.gcalui = { calendarCommands, filterCommands, openOverlay, renderNudge, onKeydown, cheatsheetSpec, showShortcuts };
 })();
