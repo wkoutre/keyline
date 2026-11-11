@@ -15,11 +15,11 @@ Nothing.
 
 ## What Keyline stores
 
-Your settings only: shortcut remappings, split-inbox tab definitions, feature toggles, and the email-to-account-index mapping used for account switching. These are stored in your browser with the `chrome.storage` API and never leave your machine. Removing the extension removes them.
+Your settings only: shortcut remappings, split-inbox tab definitions, feature toggles, and the email-to-account-index mapping used for account switching. These are stored in your browser with the `chrome.storage` API. Shortcut remappings, tab definitions and toggles use `chrome.storage.sync`, so if you have turned on your browser's own sync, the browser carries them to your other computers the same way it syncs your bookmarks. Keyline has no account and no server, and never sees that data in transit. The account mapping always stays on the computer it was learned on. Removing the extension removes them.
 
 ## Permissions
 
-- `storage`: saves your settings locally.
+- `storage`: saves your settings in the browser, synced by the browser between your computers when browser sync is on.
 - Host access to `mail.google.com` and `calendar.google.com`: required to add the palette, shortcuts, and tab bar to those pages. The extension runs nowhere else.
 
 ## Changes

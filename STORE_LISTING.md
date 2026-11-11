@@ -35,7 +35,7 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 
 - **Single purpose:** Adds keyboard shortcuts, a command palette, and split-inbox tabs to Gmail and Google Calendar.
 - **Permission justifications:**
-  - `storage`: Saves the user's settings (shortcut remappings, split-inbox tab definitions, feature toggles) locally in the browser.
+  - `storage`: Saves the user's settings (shortcut remappings, split-inbox tab definitions, feature toggles) in the browser with chrome.storage, using chrome.storage.sync so the browser's own sync carries them to the user's other computers. No Keyline account, sign-in, or server is involved.
   - Host permission `https://mail.google.com/*`: Content scripts add the command palette, keyboard shortcuts, and tab bar to Gmail and click Gmail's own controls when a shortcut is pressed.
   - Host permission `https://calendar.google.com/*`: Content scripts add the calendar palette and shortcuts to Google Calendar.
 - **Remote code:** No, I am not using remote code.

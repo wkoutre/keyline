@@ -212,10 +212,23 @@ function selectText(w, el) {
   const dom = new JSDOM(html, { url: "chrome-extension://x/src/options/options.html", runScripts: "outside-only" });
   const w = dom.window;
   const store = { paletteHotkey: "mod+k" };
-  w.chrome = {
-    storage: { local: { get: async () => ({ ...store }), set: async (p) => Object.assign(store, p) } },
+  // Settings sync: the palette key lives in chrome.storage.sync like other settings.
+  const local = {};
+  const pick = (obj, keys) => {
+    const out = {};
+    for (const k of [].concat(keys || Object.keys(obj))) if (k in obj) out[k] = obj[k];
+    return out;
   };
+  w.chrome = {
+    storage: {
+      local: { get: async (k) => pick(local, k), set: async (p) => Object.assign(local, p) },
+      sync: { QUOTA_BYTES_PER_ITEM: 8192, get: async (k) => pick(store, k), set: async (p) => Object.assign(store, p) },
+      onChanged: { addListener() {} },
+    },
+  };
+  local.syncMigrated = true;
   w.eval(fs.readFileSync(path.join(root, "src/shared/keymap.js"), "utf8"));
+  w.eval(fs.readFileSync(path.join(root, "src/content/storage.js"), "utf8"));
   w.eval(fs.readFileSync(path.join(root, "src/options/options.js"), "utf8"));
 
   const cell = w.document.getElementById("paletteHotkeyCell");
