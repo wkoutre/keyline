@@ -2815,8 +2815,75 @@ function replyWithGeminiFixture() {
   const w2 = load('<div role="toolbar"><div role="button"></div></div>' + threadFixture(), "#inbox/" + ID);
   const toasts2 = [];
   w2.InboxKeys.toast = (msg) => { toasts2.push(String(msg)); };
+  // archiveThread polls before giving up; drain its timers synchronously.
+  w2.setTimeout = (fn) => { fn(); return 0; };
+  w2.console.warn = () => {};
   press(w2, "e", { target: w2.document.body });
   assert.equal(toasts2.some((t) => /not found: Archive/.test(t)), true, "a truly missing Archive control still toasts");
+}
+
+// Regression (Dia, Nov 2026): e in an open thread still toasted "Gmail control
+// not found: Archive" with the toolbar prime in place. Three ways the single
+// synchronous prime missed, each modelled here; archive must succeed in all.
+{
+  const setup = (html, { asyncLabel = false } = {}) => {
+    const w = load(html + threadFixture(), "#inbox/" + ID);
+    const toasts = [];
+    w.InboxKeys.toast = (msg) => { toasts.push(String(msg)); };
+    const timers = [];
+    w.setTimeout = (fn) => { timers.push(fn); return 0; };
+    w.console.warn = () => {};
+    const btn = w.document.getElementById("tb-archive");
+    const clicked = [];
+    btn.addEventListener("mouseover", () => {
+      const apply = () => { btn.setAttribute("aria-label", "Archive"); btn.setAttribute("data-tooltip", "Archive"); };
+      if (asyncLabel) timers.push(apply); else apply();
+    });
+    btn.addEventListener("click", () => clicked.push("Archive"));
+    const drain = () => { while (timers.length) timers.shift()(); };
+    return { w, toasts, clicked, drain };
+  };
+
+  // 1. The toolbar wrapper measures 0x0 while its buttons are on screen.
+  {
+    const t = setup('<div gh="mtb" id="bar"><div role="button" id="tb-archive"></div></div>');
+    t.w.document.getElementById("bar").getBoundingClientRect = () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 });
+    press(t.w, "e", { target: t.w.document.body });
+    t.drain();
+    assert.deepEqual(t.clicked, ["Archive"], "a 0x0 toolbar wrapper still gets its buttons primed");
+    assert.equal(t.toasts.some((m) => /not found/.test(m)), false, "no toast when the wrapper is 0x0");
+  }
+
+  // 2. The thread toolbar is not inside any SEL.toolbars container.
+  {
+    const t = setup('<div class="thread-actions"><div role="button" id="tb-archive"></div></div>');
+    press(t.w, "e", { target: t.w.document.body });
+    t.drain();
+    assert.deepEqual(t.clicked, ["Archive"], "the wider prime reaches a toolbar outside the known containers");
+  }
+
+  // 3. Gmail fills the label in AFTER the mouseover handler returns.
+  {
+    const t = setup('<div role="toolbar"><div role="button" id="tb-archive"></div></div>', { asyncLabel: true });
+    press(t.w, "e", { target: t.w.document.body });
+    assert.deepEqual(t.clicked, [], "nothing to click until the label lands");
+    t.drain();
+    assert.deepEqual(t.clicked, ["Archive"], "archive polls and clicks once the label lands");
+    assert.equal(t.toasts.some((m) => /not found/.test(m)), false, "no toast when the label lands late");
+  }
+
+  // The wider prime never hovers controls inside the mail itself.
+  {
+    const w = load('<div role="toolbar"><div role="button"></div></div>' + threadFixture(), "#inbox/" + ID);
+    const card = w.document.querySelector('[role="listitem"]') || w.document.querySelector("[data-message-id]");
+    const inner = w.document.createElement("div");
+    inner.setAttribute("role", "button");
+    card.appendChild(inner);
+    let hovered = false;
+    inner.addEventListener("mouseover", () => { hovered = true; });
+    w.InboxKeys.gmail.primeUnlabeledButtons();
+    assert.equal(hovered, false, "message-card buttons are not hovered by the wide prime");
+  }
 }
 
 console.log("hotkey integration tests passed");

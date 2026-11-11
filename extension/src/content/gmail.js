@@ -158,9 +158,13 @@ window.InboxKeys = window.InboxKeys || {};
     };
     synthesizingHover = true;
     try {
-      for (const type of ["pointerover", "mouseover", "pointermove", "mousemove"]) {
+      // pointerenter/mouseenter don't bubble, so they reach only listeners on
+      // el itself; some Gmail builds hang the tooltip/label handler there
+      // rather than on a delegated mouseover.
+      for (const type of ["pointerover", "pointerenter", "mouseover", "mouseenter", "pointermove", "mousemove"]) {
         const Ctor = type.startsWith("pointer") && typeof PointerEvent !== "undefined" ? PointerEvent : MouseEvent;
-        el.dispatchEvent(new Ctor(type, opts));
+        const enter = type.endsWith("enter");
+        el.dispatchEvent(new Ctor(type, enter ? { ...opts, bubbles: false } : opts));
       }
     } finally {
       synthesizingHover = false;
@@ -176,18 +180,39 @@ window.InboxKeys = window.InboxKeys || {};
   // right there. Gmail's native `e` is unaffected because it never needs the
   // label. We navigate by keyboard and never move the pointer, so synthesize the
   // hover (same trick as the per-row buttons) on any visible toolbar button that
-  // is still unlabeled. Labels appear synchronously inside the dispatched
-  // mouseover, so callers can simply look up again right after.
+  // is still unlabeled. Callers look up again right after; archiveThread also
+  // polls, because the label is not guaranteed to land synchronously.
+  // The toolbar CONTAINER is deliberately not visibility-filtered: in a thread
+  // view Gmail's toolbar wrapper can measure 0x0 (its children are positioned
+  // out of flow) while its buttons are on screen, and filtering the wrapper
+  // skipped the whole toolbar. Only the buttons themselves must be visible.
+  function isUnlabeledButton(btn) {
+    return !btn.hasAttribute("aria-label") && !btn.hasAttribute("data-tooltip") && isVisible(btn);
+  }
   function primeToolbarLabels() {
     let primed = 0;
-    const bars = Array.from(document.querySelectorAll(SEL.toolbars)).filter(isVisible);
-    for (const bar of bars) {
+    for (const bar of Array.from(document.querySelectorAll(SEL.toolbars))) {
       for (const btn of Array.from(bar.querySelectorAll('[role="button"]'))) {
-        if (btn.hasAttribute("aria-label") || btn.hasAttribute("data-tooltip")) continue;
-        if (!isVisible(btn)) continue;
+        if (!isUnlabeledButton(btn)) continue;
         hover(btn);
         primed++;
       }
+    }
+    return primed;
+  }
+
+  // Wider net for the open-thread toolbar: if Gmail's thread toolbar isn't
+  // inside any SEL.toolbars container (the container hook moved), hover every
+  // visible unlabeled role=button on the page that is NOT part of the mail
+  // itself (message cards, bodies, compose editors). Hovering is inert: it only
+  // makes Gmail fill in tooltips/labels.
+  function primeUnlabeledButtons() {
+    let primed = 0;
+    for (const btn of Array.from(document.querySelectorAll('[role="button"]'))) {
+      if (!isUnlabeledButton(btn)) continue;
+      if (btn.closest('[role="listitem"], [data-message-id], .a3s, [contenteditable="true"], [role="dialog"]')) continue;
+      hover(btn);
+      primed++;
     }
     return primed;
   }
@@ -1084,8 +1109,52 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   // Archive the open thread via its toolbar icon (returns to the list).
+  // Gmail leaves the thread toolbar unlabeled until it is hovered (see
+  // primeToolbarLabels), and live in Chromium-based browsers (Dia, Nov 2026) a
+  // single synchronous prime-then-lookup still missed: "Gmail control not
+  // found: Archive" on the first e in a freshly opened thread. So: try the
+  // toolbar prime, then the wider page prime, then keep polling briefly for the
+  // label to land before giving up. The first probe is synchronous, so a
+  // labeled toolbar still archives with no delay.
   function archiveThread() {
-    return clickOr(exactButton("Archive"), "Archive");
+    let widened = false;
+    waitFor(
+      () => {
+        const hit = exactButton("Archive");
+        if (hit || widened) return hit;
+        widened = true;
+        return primeUnlabeledButtons() ? exactButton("Archive") : null;
+      },
+      (el) => realClick(el),
+      () => {
+        logMissingControl("Archive");
+        clickOr(null, "Archive");
+      },
+      12,
+      80
+    );
+    return true;
+  }
+
+  // Console breadcrumb for a "control not found" report: what toolbars and
+  // buttons Gmail actually drew, so the next fix doesn't have to guess.
+  function logMissingControl(label) {
+    try {
+      const bars = Array.from(document.querySelectorAll(SEL.toolbars));
+      const buttons = Array.from(document.querySelectorAll('[role="button"]')).filter(isVisible);
+      console.warn(`[Keyline] Gmail control not found: ${label}`, {
+        hash: location.hash,
+        toolbars: bars.map((b) => ({
+          gh: b.getAttribute("gh"),
+          role: b.getAttribute("role"),
+          visible: isVisible(b),
+          buttons: b.querySelectorAll('[role="button"]').length,
+        })),
+        visibleButtons: buttons.length,
+        unlabeledVisibleButtons: buttons.filter((b) => !b.hasAttribute("aria-label") && !b.hasAttribute("data-tooltip")).length,
+        labels: buttons.map((b) => b.getAttribute("aria-label") || b.getAttribute("data-tooltip")).filter(Boolean).slice(0, 40),
+      });
+    } catch (_) {}
   }
 
   // Leave an open inline reply before Escape is allowed to navigate back from the
@@ -1301,6 +1370,7 @@ window.InboxKeys = window.InboxKeys || {};
     clickByTooltip,
     exactButton,
     primeToolbarLabels,
+    primeUnlabeledButtons,
     realClick,
     hover,
     isSynthesizingHover,
