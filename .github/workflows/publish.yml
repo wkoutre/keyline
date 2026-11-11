@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +25,9 @@ jobs:
           persist-credentials: false
 
       # A push can carry several commits, so compare against the commit main
-      # pointed at before the push, not just HEAD^. A manual run always publishes.
+      # pointed at before the push, not just HEAD^. Only a higher version
+      # publishes, since the store rejects anything else. A manual run always
+      # publishes.
       - name: Check for a version bump
         id: version
         env:
@@ -42,8 +45,9 @@ jobs:
             base=HEAD^
           fi
           previous=$(git show "$base:extension/manifest.json" | jq -r .version)
-          if [ "$current" = "$previous" ]; then
-            echo "::notice::manifest version unchanged ($current); skipping publish"
+          highest=$(printf '%s\n%s\n' "$previous" "$current" | sort -V | tail -n1)
+          if [ "$current" = "$previous" ] || [ "$highest" != "$current" ]; then
+            echo "::notice::manifest version $previous -> $current is not a bump; skipping publish"
             echo "bumped=false" >> "$GITHUB_OUTPUT"
           else
             echo "manifest version $previous -> $current"
@@ -73,4 +77,4 @@ jobs:
           CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-        run: npx --yes chrome-webstore-upload-cli@4.0.2 --source "dist/keyline-${VERSION}.zip"
+        run: npx --no-install chrome-webstore-upload --source "dist/keyline-${VERSION}.zip"

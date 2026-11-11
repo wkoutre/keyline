@@ -11,6 +11,7 @@
     "smoke:gmail:readonly:headed": "node smoke/gmail-readonly-smoke.js readonly --headed"
   },
   "devDependencies": {
+    "chrome-webstore-upload-cli": "4.0.2",
     "jsdom": "^24.1.0"
   }
 }
