@@ -5,9 +5,10 @@ const FIELDS = {
   tabsEnabled: "checkbox",
   calendarEnabled: "checkbox",
   gmailNativeShortcuts: "checkbox",
+  autoAdvance: "checkbox",
   paletteHotkey: "value",
 };
-const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled", "calendarEnabled"]);
+const DEFAULT_ON = new Set(["enabled", "hotkeysEnabled", "tabsEnabled", "calendarEnabled", "autoAdvance"]);
 
 function flashSaved() {
   $("saved").textContent = "Saved";
