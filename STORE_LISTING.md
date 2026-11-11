@@ -65,7 +65,7 @@ For a new major or minor line, set `version` in `extension/manifest.json` to `X.
 
 To release without a code change, start the workflow from the Actions tab (**Run workflow**).
 
-The `publish` job runs in the `chrome-web-store` GitHub environment (Settings, Environments), restricted to the `main` branch. It needs five secrets there: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project. See the security notes at the top of the jobs in `publish.yml`. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
+The `publish` job runs in the `chrome-web-store` GitHub environment (Settings, Environments), restricted to the `main` branch, and signs in to Google with keyless Workload Identity Federation. No credential is stored in GitHub. It reads four non-secret repository variables: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, and `GCP_SERVICE_ACCOUNT`. Google only issues a token to a run of this repository on `main` in that environment (the provider's attribute condition in the `keyline-cws` project), and the service account `keyline-publisher@keyline-cws.iam.gserviceaccount.com` must be listed under Account, Service accounts in the developer dashboard. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
 
 Manual fallback: bump `version` yourself, `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**.
 
