@@ -1,6 +1,6 @@
 {
   "name": "keyline",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "private": true,
   "description": "Keyline: keyboard shortcuts & command palette for Gmail (Chrome MV3 extension). Fork of Inbox Keys.",
   "scripts": {
