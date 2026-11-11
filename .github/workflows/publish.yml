@@ -3,7 +3,12 @@ name: Publish to Chrome Web Store
 on:
   push:
     branches: [main]
-    paths: ["extension/**"]
+    # Only runtime files ship in the zip; docs, tests and tooling changes
+    # don't publish.
+    paths:
+      - "extension/manifest.json"
+      - "extension/src/**"
+      - "extension/icons/*.png"
   workflow_dispatch:
 
 permissions: {}
@@ -24,51 +29,37 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # A push can carry several commits, so compare against the commit main
-      # pointed at before the push, not just HEAD^. Only a higher version
-      # publishes, since the store rejects anything else. A manual run always
-      # publishes.
-      - name: Check for a version bump
+      # The version is stamped here, never by hand: MAJOR.MINOR come from
+      # manifest.json and PATCH is the number of commits on main. That count
+      # only grows (main is never force-pushed), so every publish is higher
+      # than the last, which the store requires. The stamp is not committed
+      # back, so this job needs no write access.
+      - name: Stamp the version
         id: version
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE: ${{ github.event.before }}
         run: |
-          current=$(jq -r .version extension/manifest.json)
-          echo "version=$current" >> "$GITHUB_OUTPUT"
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "bumped=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          base="$BEFORE"
-          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
-            base=HEAD^
-          fi
-          previous=$(git show "$base:extension/manifest.json" | jq -r .version)
-          highest=$(printf '%s\n%s\n' "$previous" "$current" | sort -V | tail -n1)
-          if [ "$current" = "$previous" ] || [ "$highest" != "$current" ]; then
-            echo "::notice::manifest version $previous -> $current is not a bump; skipping publish"
-            echo "bumped=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "manifest version $previous -> $current"
-            echo "bumped=true" >> "$GITHUB_OUTPUT"
-          fi
+          base=$(jq -r .version extension/manifest.json)
+          major_minor=$(echo "$base" | cut -d. -f1,2)
+          patch=$(git rev-list --count HEAD)
+          version="${major_minor}.${patch}"
+          tmp=$(mktemp)
+          jq --arg v "$version" '.version = $v' extension/manifest.json > "$tmp" && mv "$tmp" extension/manifest.json
+          tmp=$(mktemp)
+          jq --arg v "$version" '.version = $v' extension/package.json > "$tmp" && mv "$tmp" extension/package.json
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing $version (manifest base $base)"
 
-      - if: steps.version.outputs.bumped == 'true'
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           package-manager-cache: false
 
       - name: Test and package
-        if: steps.version.outputs.bumped == 'true'
         working-directory: extension
         run: |
           npm ci
           ./release.sh
 
       - name: Upload and submit for review
-        if: steps.version.outputs.bumped == 'true'
         working-directory: extension
         env:
           VERSION: ${{ steps.version.outputs.version }}
