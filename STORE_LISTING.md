@@ -54,19 +54,20 @@ Click **Submit for review**. Expect hours to a few days. Keep "publish automatic
 
 ## Releasing
 
-Releases publish themselves through `.github/workflows/publish.yml`. You never bump the version.
+Releases publish themselves through `.github/workflows/publish.yml`. You never bump the version by hand.
 
 1. Push to `main` (directly or by merging a PR) a change to `extension/manifest.json`, `extension/src/`, or `extension/icons/*.png`. Docs, tests, and tooling changes don't publish.
-2. The workflow stamps the version as `MAJOR.MINOR.<commits on main>`, runs the tests, builds the zip, uploads it, and submits it for review. The stamp isn't committed back; the store page shows the stamped version.
-3. Review still takes hours to a few days. Installed copies update themselves after approval.
+2. The `bump` job raises the patch version in `manifest.json`, `package.json`, and `package-lock.json`, commits "Release vX.Y.Z" to `main`, and tags it. Pull before your next change.
+3. The `publish` job checks out that commit, runs the tests, builds the zip, uploads it, and submits it for review.
+4. Review still takes hours to a few days. Installed copies update themselves after approval.
 
-To move to a new major or minor line, change the first two numbers of `version` in `extension/manifest.json` (the third number there is ignored). Never lower them.
+For a new major or minor line, set `version` in `extension/manifest.json` to `X.Y.0` in your commit; the release from it is `X.Y.1`. Never lower it.
 
-To re-run a release by hand, start the workflow from the Actions tab (**Run workflow**). It publishes the current stamped version, which the store rejects if that exact version was already uploaded.
+To release without a code change, start the workflow from the Actions tab (**Run workflow**).
 
-The workflow needs five repository secrets: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project.
+The workflow needs five repository secrets: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
 
-Manual fallback: `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**. Use a version higher than the last stamped one.
+Manual fallback: bump `version` yourself, `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**.
 
 ## Pulling upstream fixes
 

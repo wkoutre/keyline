@@ -18,35 +18,58 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
+  # Bumps the patch version, commits it to main, and tags it. Pushes made
+  # with GITHUB_TOKEN don't trigger workflows, so this commit doesn't loop.
+  bump:
     if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.bump.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: true # zizmor: ignore[artipacked] this job pushes the bump commit
+
+      - name: Bump, commit, and push
+        id: bump
+        run: |
+          current=$(jq -r .version extension/manifest.json)
+          IFS=. read -r major minor patch <<< "$current"
+          version="${major}.${minor}.$((patch + 1))"
+          for f in extension/manifest.json extension/package.json; do
+            tmp=$(mktemp)
+            jq --arg v "$version" '.version = $v' "$f" > "$tmp" && mv "$tmp" "$f"
+          done
+          (cd extension && npm version "$version" --no-git-tag-version --allow-same-version >/dev/null)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add extension/manifest.json extension/package.json extension/package-lock.json
+          git commit -m "Release v${version}"
+          git tag "v${version}"
+          # Someone may have pushed while this ran; replay on top and retry once.
+          if ! git push --atomic origin HEAD:main "v${version}"; then
+            git pull --rebase origin main
+            git tag -f "v${version}"
+            git push --atomic origin HEAD:main "v${version}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Released $current -> $version"
+
+  publish:
+    needs: bump
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          ref: ${{ needs.bump.outputs.sha }}
           persist-credentials: false
-
-      # The version is stamped here, never by hand: MAJOR.MINOR come from
-      # manifest.json and PATCH is the number of commits on main. That count
-      # only grows (main is never force-pushed), so every publish is higher
-      # than the last, which the store requires. The stamp is not committed
-      # back, so this job needs no write access.
-      - name: Stamp the version
-        id: version
-        run: |
-          base=$(jq -r .version extension/manifest.json)
-          major_minor=$(echo "$base" | cut -d. -f1,2)
-          patch=$(git rev-list --count HEAD)
-          version="${major_minor}.${patch}"
-          tmp=$(mktemp)
-          jq --arg v "$version" '.version = $v' extension/manifest.json > "$tmp" && mv "$tmp" extension/manifest.json
-          tmp=$(mktemp)
-          jq --arg v "$version" '.version = $v' extension/package.json > "$tmp" && mv "$tmp" extension/package.json
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Publishing $version (manifest base $base)"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -62,7 +85,7 @@ jobs:
       - name: Upload and submit for review
         working-directory: extension
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.bump.outputs.version }}
           EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
           PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
           CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
