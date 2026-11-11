@@ -52,11 +52,22 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 
 Click **Submit for review**. Expect hours to a few days. Keep "publish automatically after review" on.
 
-## Shipping an update
+## Releasing
 
-1. Bump `version` in `extension/manifest.json` (and `extension/package.json`).
-2. `cd extension && ./release.sh`
-3. Dashboard: the item, **Package, Upload new package**, then **Submit for review**. Installed copies update themselves after it's approved.
+Releases publish themselves through `.github/workflows/publish.yml`. You never bump the version by hand.
+
+1. Push to `main` (directly or by merging a PR) a change to `extension/manifest.json`, `extension/src/`, or `extension/icons/*.png`. Docs, tests, and tooling changes don't publish.
+2. The `bump` job raises the patch version in `manifest.json`, `package.json`, and `package-lock.json`, commits "Release vX.Y.Z" to `main`, and tags it. Pull before your next change.
+3. The `build` job checks out that commit, runs the tests, and builds the zip. The `publish` job uploads it and submits it for review.
+4. Review still takes hours to a few days. Installed copies update themselves after approval.
+
+For a new major or minor line, set `version` in `extension/manifest.json` to `X.Y.0` in your commit; the release from it is `X.Y.1`. Never lower it.
+
+To release without a code change, start the workflow from the Actions tab (**Run workflow**).
+
+The `publish` job runs in the `chrome-web-store` GitHub environment (Settings, Environments), restricted to the `main` branch, and signs in to Google with keyless Workload Identity Federation. No credential is stored in GitHub. It reads four non-secret repository variables: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, and `GCP_SERVICE_ACCOUNT`. Google only issues a token to a run of this repository on `main` in that environment (the provider's attribute condition in the `keyline-cws` project), and the service account `keyline-publisher@keyline-cws.iam.gserviceaccount.com` must be listed under Account, Service accounts in the developer dashboard. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
+
+Manual fallback: bump `version` yourself, `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**.
 
 ## Pulling upstream fixes
 
