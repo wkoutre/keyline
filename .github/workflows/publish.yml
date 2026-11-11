@@ -1,0 +1,76 @@
+name: Publish to Chrome Web Store
+
+on:
+  push:
+    branches: [main]
+    paths: ["extension/**"]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: cws-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A push can carry several commits, so compare against the commit main
+      # pointed at before the push, not just HEAD^. A manual run always publishes.
+      - name: Check for a version bump
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          current=$(jq -r .version extension/manifest.json)
+          echo "version=$current" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="$BEFORE"
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            base=HEAD^
+          fi
+          previous=$(git show "$base:extension/manifest.json" | jq -r .version)
+          if [ "$current" = "$previous" ]; then
+            echo "::notice::manifest version unchanged ($current); skipping publish"
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "manifest version $previous -> $current"
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.version.outputs.bumped == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Test and package
+        if: steps.version.outputs.bumped == 'true'
+        working-directory: extension
+        run: |
+          npm ci
+          ./release.sh
+
+      - name: Upload and submit for review
+        if: steps.version.outputs.bumped == 'true'
+        working-directory: extension
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: npx --yes chrome-webstore-upload-cli@4.0.2 --source "dist/keyline-${VERSION}.zip"

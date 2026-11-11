@@ -52,11 +52,20 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 
 Click **Submit for review**. Expect hours to a few days. Keep "publish automatically after review" on.
 
-## Shipping an update
+## Releasing
 
-1. Bump `version` in `extension/manifest.json` (and `extension/package.json`).
-2. `cd extension && ./release.sh`
-3. Dashboard: the item, **Package, Upload new package**, then **Submit for review**. Installed copies update themselves after it's approved.
+Releases publish themselves through `.github/workflows/publish.yml`.
+
+1. Bump `version` in `extension/manifest.json` and `extension/package.json`.
+2. Push to `main` (directly or by merging a PR).
+3. The workflow sees the new version, runs the tests, builds `dist/keyline-<version>.zip`, uploads it, and submits it for review. A push that changes `extension/` without a version bump does nothing.
+4. Review still takes hours to a few days. Installed copies update themselves after approval.
+
+To re-run a release by hand, start the workflow from the Actions tab (**Run workflow**); a manual run always uploads and submits the current version. The Web Store only accepts a version higher than the last one uploaded.
+
+The workflow needs five repository secrets: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. The OAuth client lives in the `keyline-cws` Google Cloud project.
+
+Manual fallback: `cd extension && ./release.sh`, then in the dashboard open the item, **Package, Upload new package**, then **Submit for review**.
 
 ## Pulling upstream fixes
 
