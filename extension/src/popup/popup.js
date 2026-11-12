@@ -7,6 +7,7 @@ const settings = window.InboxKeys.storage;
 
 async function init() {
   const s = await settings.load();
+  if (window.InboxKeys.theme) window.InboxKeys.theme.apply(s.theme);
   TOGGLES.forEach((k) => ($(k).checked = s[k] ?? DEFAULT_ON.has(k)));
 
   // Show the user's palette key (remappable in settings), e.g. "Cmd+K".

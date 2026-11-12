@@ -300,6 +300,23 @@ window.InboxKeys = window.InboxKeys || {};
     ];
   }
 
+  // One row per theme ("Theme: Clay (Claude-inspired)"), current one marked.
+  // Applies instantly and syncs. Mirrors the Appearance pane in settings.
+  function themeCommands() {
+    const T = InboxKeys.theme;
+    if (!T) return [];
+    const cur = T.normalize(storage.get("theme"));
+    return T.THEMES.map((t) => ({
+      id: "theme:" + t.id,
+      title: "Theme: " + T.label(t.id),
+      group: "Appearance",
+      hint: t.id === cur ? "current" : undefined,
+      keys: [],
+      contexts: InboxKeys_KEYMAP.DEFAULT_CONTEXTS,
+      run: () => T.set(t.id).then(() => InboxKeys.toast("Theme: " + T.label(t.id))),
+    }));
+  }
+
   // Account switching: g 0 / g 1 / g 2 … map to /mail/u/N. The engine binds
   // g 0–g 8 unconditionally (hotkeys.js), so every signed-in account is reachable
   // by keyboard immediately. The MAIN-world bridge enumerates the real signed-in
@@ -407,7 +424,7 @@ window.InboxKeys = window.InboxKeys || {};
 
   // Built fresh each time the palette opens so tab/account/override state is current.
   function all() {
-    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...accountCommands(), ...extra];
+    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...themeCommands(), ...accountCommands(), ...extra];
   }
 
   // Allow late registration (e.g. from custom user config later).

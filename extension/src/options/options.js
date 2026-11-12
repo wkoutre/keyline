@@ -32,7 +32,12 @@ async function load() {
   const s = await settings.load();
   // Keep the cache current while the page is open (Gmail, the popup or another
   // computer may change settings), so read-modify-write edits start fresh.
-  if (!load.listening) settings.onChange(() => renderSyncStatus());
+  if (!load.listening) {
+    settings.onChange((cache, changes) => {
+      renderSyncStatus();
+      if (changes && changes.theme) renderThemes(cache.theme);
+    });
+  }
   load.listening = true;
   for (const [k, kind] of Object.entries(FIELDS)) {
     const el = $(k);
@@ -41,12 +46,58 @@ async function load() {
     else el.value = s[k] ?? "";
   }
   renderSyncStatus();
+  renderThemes(s.theme);
   renderAccounts(s.accountNames || {});
   renderTabs(s.tabs);
   keymapOverrides = s.keyOverrides || {};
   renderKeymap();
   paletteHotkey = normalizePalette(s.paletteHotkey);
   renderPaletteHotkey();
+}
+
+// ---- Theme ----------------------------------------------------------------
+// One card per theme (src/shared/theme.js). Clicking applies it to this page at
+// once and saves it; Gmail and Calendar tabs pick it up through storage.onChange.
+
+function renderThemes(current) {
+  const T = window.InboxKeys.theme;
+  const wrap = $("themes");
+  if (!T || !wrap) return;
+  const cur = T.apply(current);
+  wrap.textContent = "";
+  for (const t of T.THEMES) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "theme-card" + (t.id === cur ? " active" : "");
+    card.dataset.theme = t.id;
+    card.setAttribute("role", "radio");
+    card.setAttribute("aria-checked", t.id === cur ? "true" : "false");
+    const [bg, text, accent] = t.swatch;
+    const preview = document.createElement("span");
+    preview.className = "theme-preview";
+    preview.style.setProperty("--sw-bg", bg);
+    preview.style.setProperty("--sw-text", text);
+    preview.style.setProperty("--sw-accent", accent);
+    preview.innerHTML = `<span class="theme-preview-bar"></span><span class="theme-preview-dot"></span>`;
+    const head = document.createElement("span");
+    const name = document.createElement("span");
+    name.className = "theme-name";
+    name.textContent = t.name;
+    const insp = document.createElement("span");
+    insp.className = "theme-inspired";
+    insp.textContent = t.inspired ? `${t.inspired}-inspired` : "Default";
+    head.append(name, insp);
+    const note = document.createElement("span");
+    note.className = "theme-note";
+    note.textContent = t.note;
+    card.append(preview, head, note);
+    card.addEventListener("click", async () => {
+      await T.set(t.id, settings);
+      renderThemes(t.id);
+      flashSaved();
+    });
+    wrap.appendChild(card);
+  }
 }
 
 // ---- Command palette hotkey ----------------------------------------------

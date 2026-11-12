@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Keyline — Settings</title>
+    <link rel="stylesheet" href="../shared/themes.css" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
@@ -34,6 +35,16 @@
           <kbd>Cmd</kbd>+<kbd>K</kbd> always inserts a link (Gmail's own shortcut),
           so you only need to change this to get <kbd>Cmd</kbd>+<kbd>K</kbd> back everywhere else in the editor too.
         </p>
+      </section>
+
+      <section>
+        <h2>Theme</h2>
+        <p class="muted">
+          Restyles the command palette, cheat sheet, toasts, tab bar and settings on
+          Gmail and Calendar. Each theme follows your system's light or dark mode and
+          syncs with your other settings.
+        </p>
+        <div id="themes" class="themes" role="radiogroup" aria-label="Theme"></div>
       </section>
 
       <section>
@@ -77,6 +88,7 @@
     </main>
     <script src="../shared/keymap.js"></script>
     <script src="../content/storage.js"></script>
+    <script src="../shared/theme.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

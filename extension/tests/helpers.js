@@ -87,7 +87,7 @@ function tryLoadGcalUi(bodyHtml) {
   const window = makeWindow(bodyHtml);
   if (!window) return null;
   window.__toasts = [];
-  loadScripts(window, ["src/shared/keymap.js", "src/content/storage.js", "src/content/toast.js", "src/content/cheatsheet.js", "src/content/gcal.js", "src/content/gcal-ui.js"]);
+  loadScripts(window, ["src/shared/keymap.js", "src/content/storage.js", "src/shared/theme.js", "src/content/toast.js", "src/content/cheatsheet.js", "src/content/gcal.js", "src/content/gcal-ui.js"]);
   window.InboxKeys.toast = (msg, opts) => window.__toasts.push({ msg: String(msg), opts });
   return window;
 }
@@ -100,6 +100,7 @@ function tryLoadContentScripts(bodyHtml) {
     "src/shared/keymap.js",
     "src/shared/when.js",
     "src/content/storage.js",
+    "src/shared/theme.js",
     "src/content/account-sync.js",
     "src/content/toast.js",
     "src/content/cheatsheet.js",

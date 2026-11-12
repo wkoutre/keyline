@@ -55,7 +55,9 @@ src/content/gcal-ui.js    in-calendar layer UI: Cmd+K overlay (toggle/focus laye
                           account, two add flows — Google sharing guide + Outlook/iCal
                           paste — mirror create/today/views) + curated single keys
                           (c/t/j/k/d/w/m, ←/→) + persistent "keep adding" nudge.
-src/content/palette.css   scoped styles (palette, toasts, tab bar, config modal).
+src/content/palette.css   scoped styles (palette, toasts, tab bar, config modal), colors only via --ik-* tokens.
+src/shared/themes.css     theme tokens (--ik-*), one light + dark block per theme.
+src/shared/theme.js       theme catalog + apply/init/set (data-inboxkeys-theme on <html>).
 src/popup/                toolbar popup (quick toggles + configure tabs).
 src/options/              settings page (toggles, per-command key remap UI, accounts, cheat sheet).
 src/background/           MV3 service worker (message relay).
@@ -85,6 +87,14 @@ Preferences sync between computers through `chrome.storage.sync`, the browser's 
 - One-time migration per machine (`syncMigrated` in local): pre-sync local values are pushed up only where sync has no value yet, so a second machine adopts the synced setup. `keyOverrides` merges (synced entry wins per command).
 - Quota: a value over `QUOTA_BYTES_PER_ITEM` (8 KB) or any failing sync write (total quota, rate limit) is kept in local and listed in `syncOverflow`; that local copy wins on load until a later sync write of the key succeeds. The user gets a toast and the options page lists the unsynced keys.
 - `onChange` reads each key only from the area that owns it, so stale copies in the other area are ignored. Popup, options and service worker go through `InboxKeys.storage`, never `chrome.storage.*` directly (pinned by `tests/storage.test.js`).
+
+## Themes (src/shared/theme.js + themes.css)
+
+Five UI themes: Keyline (default, indigo/slate), Clay (Claude-inspired), Mono (Codex-inspired), Aurora (Gemini-inspired), Plush (family.co-inspired). Each borrows a mood (colors, type stack, radii) and copies no logos, assets or webfonts; fonts fall back to what the system or the Google page already has.
+
+- Every Keyline surface (palette.css, the Calendar overlay css in `gcal-ui.js`, options.css, popup.css) reads ONLY `--ik-*` tokens. No hex colors and no `prefers-color-scheme` outside `src/shared/themes.css`; `tests/themes.test.js` pins this and checks every theme defines every token in both its light and dark block. A new color goes into the default block first, then every theme.
+- `themes.css` keys themes off `data-inboxkeys-theme` on `<html>`; the default block also targets bare `:root`, so pages without the attribute look like Keyline. Light/dark still follows the system, per theme.
+- `storage.theme` (default `"keyline"`) syncs like other settings. `InboxKeys.theme.init(storage)` runs after `storage.load()` in `content.js` and `gcal-ui.js` init, applies it and follows `onChange`. Pickers: the Appearance pane in the in-Gmail settings modal (click previews, Save keeps, Cancel/Esc reverts via `closeConfig`), the Theme section of the options page (click saves), and "Theme: …" rows in both Cmd+K palettes.
 
 ## The context classifier (gmail.getContext)
 

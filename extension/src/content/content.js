@@ -5,6 +5,9 @@
 
   await storage.load();
 
+  // Theme first, so the tab bar and everything after paints in it.
+  if (InboxKeys.theme) InboxKeys.theme.init(storage);
+
   hotkeys.install();
   tabs.init();
 

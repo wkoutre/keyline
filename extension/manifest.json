@@ -35,6 +35,7 @@
         "https://mail.google.com/*"
       ],
       "css": [
+        "src/shared/themes.css",
         "src/content/palette.css"
       ],
       "js": [
@@ -42,6 +43,7 @@
         "src/shared/keymap.js",
         "src/shared/when.js",
         "src/content/storage.js",
+        "src/shared/theme.js",
         "src/content/account-sync.js",
         "src/content/toast.js",
         "src/content/cheatsheet.js",
@@ -64,12 +66,14 @@
         "https://calendar.google.com/*"
       ],
       "css": [
+        "src/shared/themes.css",
         "src/content/palette.css"
       ],
       "js": [
         "src/shared/hashutil.js",
         "src/shared/keymap.js",
         "src/content/storage.js",
+        "src/shared/theme.js",
         "src/content/account-sync.js",
         "src/content/toast.js",
         "src/content/cheatsheet.js",
