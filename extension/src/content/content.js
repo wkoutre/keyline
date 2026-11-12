@@ -30,5 +30,5 @@
     if (msg && msg.type === "inboxkeys:open-tabs-config") tabs.openConfig();
   });
 
-  console.log("[InboxKeys] ready on", location.host, "build: inboxkeys-audit-hardening");
+  console.log("[Keyline] ready on", location.host);
 })();

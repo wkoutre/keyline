@@ -220,7 +220,7 @@ window.InboxKeys = window.InboxKeys || {};
       try {
         cmd.run();
       } catch (err) {
-        console.error("[InboxKeys] command failed", cmd.id, err);
+        console.error("[Keyline] command failed", cmd.id, err);
         InboxKeys.toast("Command failed: " + (cmd.id || "unknown"), { kind: "warn" });
       }
     }, 30);

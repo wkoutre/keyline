@@ -255,7 +255,7 @@ window.InboxKeys = window.InboxKeys || {};
     return [
       {
         id: "inboxkeys-settings",
-        title: "InboxKeys settings...",
+        title: "Keyline settings…",
         group: "Settings",
         keys: [],
         contexts: InboxKeys_KEYMAP.DEFAULT_CONTEXTS,

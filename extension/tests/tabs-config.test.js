@@ -158,12 +158,17 @@ async function flush() {
     const settings = w.InboxKeys.commands.all().find((cmd) => cmd.id === "inboxkeys-settings");
     const shortcuts = w.InboxKeys.commands.all().find((cmd) => cmd.id === "shortcuts-config");
 
-    assert.ok(settings, "Command palette should include an InboxKeys settings command");
+    assert.ok(settings, "Command palette should include a Keyline settings command");
+    assert.equal(settings.title, "Keyline settings…", "the palette settings command is branded Keyline");
     assert.ok(shortcuts, "Command palette should include a keyboard shortcuts settings command");
 
     shortcuts.run();
     const modal = w.document.querySelector(".inboxkeys-cfg");
     assert.ok(modal, "settings command should open the in-Gmail settings modal");
+    assert.equal(modal.querySelector(".inboxkeys-cfg-title").textContent, "Keyline settings", "settings modal title is branded Keyline");
+    assert.doesNotMatch(modal.outerHTML, />[^<]*Inbox ?Keys|"[^"]*Inbox ?Keys[^"]*"/, "settings modal text and labels never say InboxKeys");
+    const gear = w.document.querySelector(".inboxkeys-tab-gear");
+    if (gear) assert.equal(gear.getAttribute("aria-label"), "Configure Keyline tabs");
     assert.equal(modal.querySelector('[data-settings-panel="shortcuts"]').hidden, false, "keyboard shortcuts command should open the shortcuts tab");
   }
 

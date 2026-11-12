@@ -7,9 +7,9 @@ const readline = require("node:readline/promises");
 const ROOT = path.resolve(__dirname, "..");
 const EXTENSION_DIR = ROOT;
 const SMOKE_DIR = path.join(ROOT, ".smoke");
-const PROFILE_DIR = process.env.INBOXKEYS_SMOKE_PROFILE || path.join(SMOKE_DIR, "chrome-profile");
+const PROFILE_DIR = process.env.KEYLINE_SMOKE_PROFILE || process.env.INBOXKEYS_SMOKE_PROFILE || path.join(SMOKE_DIR, "chrome-profile");
 const ARTIFACT_DIR = path.join(SMOKE_DIR, "artifacts");
-const GMAIL_URL = process.env.INBOXKEYS_SMOKE_URL || "https://mail.google.com/mail/u/0/#inbox";
+const GMAIL_URL = process.env.KEYLINE_SMOKE_URL || process.env.INBOXKEYS_SMOKE_URL || "https://mail.google.com/mail/u/0/#inbox";
 
 const args = process.argv.slice(2);
 const mode = args[0] || "readonly";
@@ -44,7 +44,7 @@ async function launchContext(chromium) {
       "--disable-features=Translate",
     ],
   };
-  const channel = process.env.INBOXKEYS_CHROME_CHANNEL;
+  const channel = process.env.KEYLINE_CHROME_CHANNEL || process.env.INBOXKEYS_CHROME_CHANNEL;
   if (channel) launchOptions.channel = channel;
   return chromium.launchPersistentContext(PROFILE_DIR, launchOptions);
 }
@@ -130,7 +130,7 @@ async function verifyExtensionPalette(page) {
   await page.keyboard.press(`${mod}+K`);
   await page.waitForTimeout(300);
   const opened = await page.locator(".inboxkeys-modal").count();
-  if (!opened) throw new Error("Cmd/Ctrl+K did not open the InboxKeys command palette.");
+  if (!opened) throw new Error("Cmd/Ctrl+K did not open the Keyline command palette.");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);
 }
