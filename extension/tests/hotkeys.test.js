@@ -2966,7 +2966,8 @@ function replyWithGeminiFixture() {
     const w = load(listFixture(), "#inbox");
     w.InboxKeys.palette.show();
     const t = titles(w);
-    assert.equal(t.includes("Reply"), false, "list palette hides thread-only Reply");
+    assert.equal(t.includes("Open link or attachment"), false, "list palette hides thread-only Open link");
+    assert.equal(t.includes("Reply"), true, "list palette offers instant Reply (opens the cursor row)");
     assert.equal(t.includes("Go to Inbox"), true, "list palette keeps navigation");
     assert.equal(t.includes("Archive"), true, "list palette keeps Archive");
     w.InboxKeys.palette.hide();

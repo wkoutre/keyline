@@ -714,7 +714,7 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   // Called right after the Snooze menu button was clicked.
-  function snoozeUntil(when) {
+  function snoozeUntil(when, what) {
     return waitFor(
       () => {
         const menu = Array.from(document.querySelectorAll(SEL.snoozeMenu)).filter(isShowing)[0];
@@ -722,7 +722,7 @@ window.InboxKeys = window.InboxKeys || {};
       },
       (item) => {
         realClick(item);
-        fillDateTime(when, [/^Save$/i, /^Snooze$/i], "Snoozed until");
+        fillDateTime(when, [/^Save$/i, /^Snooze$/i], what || "Snoozed until");
       },
       () => {
         logMissingControl("Snooze (Pick date & time)");
@@ -1291,6 +1291,16 @@ window.InboxKeys = window.InboxKeys || {};
   // The old labeledButton(/^Forward\b/) fallback is gone: it prefix-matched
   // "Forward all" and other strays document-wide. Never reintroduce it.
 
+  // True once an open conversation shows its inline Reply / Reply all /
+  // Forward controls (or a labeled Reply button), i.e. reply and forward can
+  // act. listnav.openThen waits on this after opening a row.
+  function threadComposeReady() {
+    return !!(
+      amsButton(/^(reply|reply all|forward)\b/i) ||
+      labeledButton([/^Reply\b/i], document)
+    );
+  }
+
   function inlineForward(scope = document) {
     return amsButton(/^forward$/i, scope) || exactButton("Forward", scope);
   }
@@ -1803,6 +1813,8 @@ window.InboxKeys = window.InboxKeys || {};
 
   InboxKeys.gmail = {
     SEL,
+    threadComposeReady,
+    waitFor,
     firstVisible,
     verifySelectors,
     accountIndex,
@@ -1829,7 +1841,6 @@ window.InboxKeys = window.InboxKeys || {};
     setSelectSeconds,
     settingsSaveButton,
     UNDO_SEND_CHOICES,
-    waitFor,
     toggleStar,
     attachFile,
     discardDraft,

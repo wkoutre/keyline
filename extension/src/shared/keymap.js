@@ -11,9 +11,12 @@
   const commands = [
     // Compose / messaging
     { id: "compose", title: "Compose new email", group: "Compose", defaultKeys: ["c"], contexts: ["inboxList", "threadView"], fixed: false },
-    { id: "reply", title: "Reply", group: "Compose", defaultKeys: ["r"], contexts: ["threadView"], fixed: false },
-    { id: "reply-all", title: "Reply all", group: "Compose", defaultKeys: ["Enter", "a"], contexts: ["threadView"], fixed: false },
-    { id: "forward", title: "Forward", group: "Compose", defaultKeys: ["f"], contexts: ["threadView"], fixed: false },
+    // reply / reply-all / forward also fire from the list: they open the cursor
+    // conversation and start the draft in one keystroke (listnav.openThen).
+    // Enter stays "open" in the list (the engine special-cases it there).
+    { id: "reply", title: "Reply", group: "Compose", defaultKeys: ["r"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "reply-all", title: "Reply all", group: "Compose", defaultKeys: ["Enter", "a"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "forward", title: "Forward", group: "Compose", defaultKeys: ["f"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "open-link-or-attachment", title: "Open link or attachment", group: "Compose", defaultKeys: ["Mod+O"], contexts: ["threadView"], fixed: true },
     { id: "attach-file", title: "Attach file", group: "Compose", defaultKeys: ["Mod+U"], contexts: ["compose"], fixed: true },
     { id: "schedule-send", title: "Schedule send…", group: "Compose", defaultKeys: ["Mod+Shift+Enter"], contexts: ["compose", "threadView"], fixed: true },
@@ -29,6 +32,7 @@
     { id: "mark-read", title: "Mark as read", group: "Triage", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mark-unread", title: "Mark as unread", group: "Triage", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "snooze", title: "Snooze…", group: "Triage", defaultKeys: ["h"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "remind-no-reply", title: "Remind me if no reply…", group: "Triage", defaultKeys: ["Shift+H"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "report-spam", title: "Report spam", group: "Triage", defaultKeys: ["!"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "star", title: "Star / toggle star", group: "Triage", defaultKeys: ["s"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mute", title: "Mute", group: "Triage", defaultKeys: ["Shift+M"], contexts: ["inboxList", "threadView"], fixed: true },

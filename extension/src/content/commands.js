@@ -51,6 +51,18 @@ window.InboxKeys = window.InboxKeys || {};
     return action();
   }
 
+  // Instant reply / reply-all / forward: in the list, open the cursor
+  // conversation and run the thread action once Gmail has rendered it, so one
+  // keystroke goes from the inbox to a draft. In a conversation, run it as is.
+  function fromList(threadAction, what) {
+    return () => {
+      if (gmail.getContext() === "inboxList" && InboxKeys.listnav && InboxKeys.listnav.openThen) {
+        return InboxKeys.listnav.openThen(threadAction, what);
+      }
+      return threadAction();
+    };
+  }
+
   // In an open conversation, run a thread-removing action with auto-advance
   // armed (see listnav.advancing). Snooze gets a longer window because Gmail
   // only returns to the list after you pick a time in its picker.
@@ -106,9 +118,9 @@ window.InboxKeys = window.InboxKeys || {};
     return [
       // Compose / messaging
       cmd("compose", () => gmail.compose()),
-      cmd("reply", () => gmail.replyToThread()),
-      cmd("reply-all", () => gmail.replyAllToThread(InboxKeys.threadnav.currentCard() || document)),
-      cmd("forward", () => gmail.forwardThread(InboxKeys.threadnav.currentCard() || document)),
+      cmd("reply", fromList(() => gmail.replyToThread(), "reply")),
+      cmd("reply-all", fromList(() => gmail.replyAllToThread(InboxKeys.threadnav.currentCard() || document), "reply all")),
+      cmd("forward", fromList(() => gmail.forwardThread(InboxKeys.threadnav.currentCard() || document), "forward")),
       cmd("open-link-or-attachment", () => gmail.openLinkOrAttachment(InboxKeys.threadnav.currentCard() || document)),
       cmd("attach-file", () => gmail.attachFile()),
       cmd("undo-send", () => gmail.undoSend()),
@@ -123,6 +135,7 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("mark-read", () => gmail.action(["Mark as read"])),
       cmd("mark-unread", () => gmail.action(["Mark as unread"])),
       cmd("snooze", () => InboxKeys.later.snooze(snoozeOpener())),
+      cmd("remind-no-reply", () => InboxKeys.later.remindNoReply(snoozeOpener())),
       cmd("schedule-send", () => InboxKeys.later.scheduleSend()),
       cmd("report-spam", advancing(() => gmail.action(["Report spam"]))),
       cmd("star", () => (gmail.getContext() === "threadView" ? gmail.toggleStar(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.toggleStar())),
