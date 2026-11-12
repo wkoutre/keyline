@@ -112,6 +112,15 @@ window.InboxKeys = window.InboxKeys || {};
     cardSender: ".gD[email]",
     // left-nav label links (#label/<name>), for "jump to label" in Cmd+K
     navLabel: 'a[href*="#label/"]',
+    // Snooze + schedule send (verified live Nov 2026). Both flows end in ONE
+    // shared "Pick date & time" dialog with plain text inputs labelled Date and
+    // Time; its confirm button ("Save" / "Schedule send") has no aria-label and
+    // never disables, so validity is read from aria-invalid on the inputs.
+    snoozeMenu: '[role="menu"][aria-label="Snooze menu"]',
+    dateInput: 'input[aria-label="Date"]',
+    timeInput: 'input[aria-label="Time"]',
+    sendOptions: '[aria-label="More send options"], [data-tooltip="More send options"]',
+    scheduleDialog: '[role="dialog"][aria-label="Schedule send"]',
   };
 
   // First visible match for a selector, or null.
@@ -360,7 +369,7 @@ window.InboxKeys = window.InboxKeys || {};
         if (opts.onClick) opts.onClick(el);
       },
       () => {
-        if (opts.menu) return clickFromMoreMenu(opts.menu, what);
+        if (opts.menu) return clickFromMoreMenu(opts.menu, what, opts.onClick);
         logMissingControl(what);
         if (opts.onMissing) return opts.onMissing();
         clickOr(null, what);
@@ -387,7 +396,7 @@ window.InboxKeys = window.InboxKeys || {};
   // menu that was NOT already showing counts (a stale menu could belong to
   // something else); if the item never shows, close the menu we opened rather
   // than leave it over the mail.
-  function clickFromMoreMenu(patterns, what) {
+  function clickFromMoreMenu(patterns, what, onClick) {
     const fail = () => {
       logMissingControl(what);
       clickOr(null, what);
@@ -409,7 +418,10 @@ window.InboxKeys = window.InboxKeys || {};
         }
         return null;
       },
-      (item) => realClick(item),
+      (item) => {
+        realClick(item);
+        if (onClick) onClick(item);
+      },
       () => {
         if (showingMenus().some((m) => !stale.has(m))) realClick(more);
         fail();
@@ -528,8 +540,180 @@ window.InboxKeys = window.InboxKeys || {};
     return clickControl(() => findControl(READ_PATTERNS), "Mark as read/unread", { menu: READ_PATTERNS });
   }
 
-  function snooze() {
-    return clickControl(() => findControl([/^Snooze\b/i, /^Remind me\b/i]), "Snooze", { menu: [/^Snooze\b/i] });
+  // Open Gmail's Snooze menu for the open conversation (or the selected rows).
+  // `after`, when given, runs once the menu button was clicked: snoozeUntil
+  // continues into the custom date/time dialog from there.
+  function snooze(after) {
+    return clickControl(() => findControl([/^Snooze\b/i, /^Remind me\b/i]), "Snooze", {
+      menu: [/^Snooze\b/i],
+      onClick: after ? () => after() : null,
+    });
+  }
+
+  // ---- Snooze until / schedule send at a chosen time ------------------------
+  // Both Gmail flows end in the same "Pick date & time" dialog, so a preset or a
+  // typed time is entered there instead of matching Gmail's own (relative,
+  // ever-shifting) quick picks. Strings use the format Gmail itself displays
+  // ("Nov 14, 2026", "3:00 PM"); Gmail normalizes and validates on blur.
+  const PICK_DATE_TIME = [/^Pick date\s*(&|and)\s*time\b/i, /^Select date and time\b/i];
+
+  function showingMenuItem(patterns, scope) {
+    const menus = scope ? [scope] : showingMenus();
+    for (const menu of menus) {
+      const item = Array.from(menu.querySelectorAll(SEL.menuItem))
+        .filter(isVisible)
+        .find((el) => patterns.some((p) => p.test(controlLabel(el))));
+      if (item) return item;
+    }
+    return null;
+  }
+
+  function dateTimeDialog() {
+    const input = Array.from(document.querySelectorAll(SEL.dateInput)).filter(isVisible)[0];
+    if (!input) return null;
+    const dialog = input.closest('[role="dialog"]');
+    return dialog && dialog.querySelector(SEL.timeInput) ? dialog : null;
+  }
+
+  // Set a Gmail text input the way a person would leave it: focus, the native
+  // value setter (so any framework value tracking sees a real change), input
+  // and change events, then blur, which is when Gmail parses and validates.
+  function setInputValue(input, value) {
+    if (typeof input.focus === "function") input.focus();
+    const proto = Object.getPrototypeOf(input);
+    const desc = Object.getOwnPropertyDescriptor(proto, "value") || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    if (desc && desc.set) desc.set.call(input, value);
+    else input.value = value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    if (typeof input.blur === "function") input.blur();
+    input.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
+    input.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+  }
+
+  function dialogButton(dialog, patterns) {
+    return (
+      Array.from(dialog.querySelectorAll('button, [role="button"]'))
+        .filter(isVisible)
+        .find((el) => patterns.some((p) => p.test(controlLabel(el)))) || null
+    );
+  }
+
+  // Fill the shared dialog and confirm. Gmail's confirm button stays enabled
+  // even for an invalid value, so check aria-invalid ourselves; on a rejected
+  // value cancel the dialog and say so rather than leave it half filled.
+  function fillDateTime(when, confirmPatterns, what) {
+    const W = window.InboxKeys_WHEN;
+    return waitFor(
+      dateTimeDialog,
+      (dialog) => {
+        const date = dialog.querySelector(SEL.dateInput);
+        const time = dialog.querySelector(SEL.timeInput);
+        setInputValue(date, W.gmailDate(when));
+        setInputValue(time, W.gmailTime(when));
+        const invalid = () => date.getAttribute("aria-invalid") === "true" || time.getAttribute("aria-invalid") === "true";
+        waitFor(
+          () => (invalid() ? null : dialogButton(dialog, confirmPatterns)),
+          (btn) => {
+            realClick(btn);
+            if (InboxKeys.toast) InboxKeys.toast(`${what} ${W.label(when)}`, { kind: "info" });
+          },
+          () => {
+            const cancel = dialogButton(dialog, [/^Cancel$/i]);
+            if (cancel) realClick(cancel);
+            if (InboxKeys.listnav && InboxKeys.listnav.disarmAdvance) InboxKeys.listnav.disarmAdvance();
+            if (InboxKeys.toast)
+              InboxKeys.toast(invalid() ? `Gmail rejected ${W.label(when)}` : `Gmail control not found: ${what} (confirm)`, { kind: "warn" });
+          },
+          4,
+          80
+        );
+      },
+      () => clickOr(null, `${what} (date & time)`),
+      12,
+      80
+    );
+  }
+
+  // Called right after the Snooze menu button was clicked.
+  function snoozeUntil(when) {
+    return waitFor(
+      () => {
+        const menu = Array.from(document.querySelectorAll(SEL.snoozeMenu)).filter(isShowing)[0];
+        return showingMenuItem(PICK_DATE_TIME, menu || null);
+      },
+      (item) => {
+        realClick(item);
+        fillDateTime(when, [/^Save$/i, /^Snooze$/i], "Snoozed until");
+      },
+      () => {
+        logMissingControl("Snooze (Pick date & time)");
+        clickOr(null, "Snooze (Pick date & time)");
+      },
+      12,
+      80
+    );
+  }
+
+  // The draft that owns the focused editor, as the nearest ancestor that also
+  // holds its own "More send options" button (works for the docked compose,
+  // a full-screen compose and an inline reply). Null when no draft is open.
+  function composeScope() {
+    const body = composeBody();
+    if (!body) return null;
+    for (let el = body.parentElement; el && el !== document.body; el = el.parentElement) {
+      if (el.querySelector(SEL.sendOptions)) return el;
+    }
+    return null;
+  }
+
+  // Schedule `draft` (from composeScope) for `when`; when is null → just open
+  // Gmail's own Schedule send dialog. With no recipient Gmail shows its own
+  // "Please specify at least one recipient" alert instead; we leave that to it.
+  function scheduleSendAt(draft, when) {
+    if (!draft || !draft.isConnected) {
+      if (InboxKeys.toast) InboxKeys.toast("The draft closed. Open it and try again", { kind: "warn" });
+      return false;
+    }
+    const caret = Array.from(draft.querySelectorAll(SEL.sendOptions)).filter(isVisible)[0];
+    const stale = new Set(showingMenus()); // before the click: only a menu it opens counts
+    if (!clickOr(caret, "More send options")) return false;
+    waitFor(
+      () => {
+        for (const menu of showingMenus()) {
+          if (stale.has(menu)) continue;
+          const item = showingMenuItem([/^Schedule send$/i], menu);
+          if (item) return item;
+        }
+        return null;
+      },
+      (item) => {
+        realClick(item);
+        if (!when) return;
+        waitFor(
+          () => {
+            if (Array.from(document.querySelectorAll('[role="alertdialog"]')).some(isShowing)) return "alert";
+            const dialog = Array.from(document.querySelectorAll(SEL.scheduleDialog)).filter(isShowing)[0];
+            return dialog ? showingMenuItem(PICK_DATE_TIME, dialog) : null;
+          },
+          (pick) => {
+            if (pick === "alert") return; // Gmail is asking for a recipient
+            realClick(pick);
+            fillDateTime(when, [/^Schedule send$/i], "Scheduled for");
+          },
+          () => clickOr(null, "Schedule send (Pick date & time)"),
+          12,
+          80
+        );
+      },
+      () => {
+        if (showingMenus().some((m) => !stale.has(m))) realClick(caret);
+        clickOr(null, "Schedule send");
+      },
+      10,
+      80
+    );
+    return true;
   }
 
   function markNotDone() {
@@ -1499,7 +1683,7 @@ window.InboxKeys = window.InboxKeys || {};
     // after Escape — doesn't keep us stuck in modalOpen/attachmentPreview.
     const dialogs = Array.from(
       document.querySelectorAll('[role="dialog"], [role="menu"]')
-    ).filter(isShowing);
+    ).filter((d) => isShowing(d) && !(d.closest && d.closest(".inboxkeys-overlay"))); // our own palette is paletteOpen above, never a Gmail modal
     const body = composeBody();
     for (const d of dialogs) {
       if (body && d.contains(body)) continue; // compose dialog handled below
@@ -1565,6 +1749,9 @@ window.InboxKeys = window.InboxKeys || {};
     discardDraft,
     markReadUnread,
     snooze,
+    snoozeUntil,
+    scheduleSendAt,
+    composeScope,
     markNotDone,
     mute,
     unsubscribe,
