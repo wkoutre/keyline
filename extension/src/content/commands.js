@@ -180,6 +180,7 @@ window.InboxKeys = window.InboxKeys || {};
       }),
       cmd("mail-from-sender", () => mailFrom("sender")),
       cmd("mail-from-domain", () => mailFrom("domain")),
+      cmd("contact-sidebar", () => InboxKeys.contacts.toggle()),
 
       // Help
       cmd("shortcuts-help", () => InboxKeys.cheatsheet.toggle(cheatsheetSpec)),

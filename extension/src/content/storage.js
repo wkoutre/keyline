@@ -21,6 +21,8 @@ window.InboxKeys = window.InboxKeys || {};
     autoAdvance: true,
     // UI theme for every Keyline surface (see src/shared/theme.js). Syncs.
     theme: "keyline",
+    // The contact sidebar ("i") stays open across conversations once opened.
+    contactSidebar: false,
     // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
     paletteRecents: [],
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special

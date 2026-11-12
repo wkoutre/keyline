@@ -702,3 +702,83 @@ tr.zA.inboxkeys-cursor > td:first-child { box-shadow: inset 4px 0 0 0 var(--ik-c
   font-size: 12px;
   color: var(--ik-text-muted);
 }
+
+/* ---- Contact sidebar ("i") ---- */
+.inboxkeys-contact {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  bottom: 16px;
+  width: 300px;
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  background: var(--ik-surface);
+  color: var(--ik-text);
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius) 0 0 var(--ik-radius);
+  box-shadow: var(--ik-shadow);
+  font-family: var(--ik-font);
+  font-size: 13px;
+  overflow: hidden;
+}
+.inboxkeys-contact-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--ik-divider);
+}
+.inboxkeys-contact-title { font-size: 12px; font-weight: var(--ik-title-weight); color: var(--ik-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.inboxkeys-contact-close {
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+}
+.inboxkeys-contact-close kbd {
+  font-family: var(--ik-font-mono); font-size: 11px; background: var(--ik-fill);
+  color: var(--ik-text-kbd); padding: 1px 6px; border-radius: var(--ik-radius-sm);
+}
+.inboxkeys-contact-body { flex: 1; overflow-y: auto; padding: 14px; }
+.inboxkeys-contact-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.inboxkeys-contact-avatar {
+  width: 48px; height: 48px; border-radius: 50%; flex: none; object-fit: cover;
+  background: var(--ik-accent-soft);
+}
+.inboxkeys-contact-initials {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ik-accent); font-weight: 600; font-size: 17px;
+}
+.inboxkeys-contact-who { min-width: 0; }
+.inboxkeys-contact-name {
+  font-size: 15px; font-weight: var(--ik-title-weight); font-family: var(--ik-font-display);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.inboxkeys-contact-email { color: var(--ik-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inboxkeys-contact-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.inboxkeys-contact-btn, .inboxkeys-contact-chip {
+  border: 1px solid var(--ik-border); background: var(--ik-btn-bg); color: var(--ik-btn-text);
+  border-radius: var(--ik-radius-btn); padding: 4px 9px; font: inherit; font-size: 12px; cursor: pointer;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.inboxkeys-contact-btn:hover, .inboxkeys-contact-chip:hover { background: var(--ik-fill); }
+.inboxkeys-contact-section {
+  margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--ik-text-subtle);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.inboxkeys-contact-people { display: flex; flex-wrap: wrap; gap: 6px; }
+.inboxkeys-contact-threads { display: flex; flex-direction: column; gap: 2px; }
+.inboxkeys-contact-thread {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  color: var(--ik-text); font: inherit; padding: 7px 8px; border-radius: var(--ik-radius-md); cursor: pointer;
+}
+.inboxkeys-contact-thread:hover { background: var(--ik-row-active); }
+.inboxkeys-contact-thread-top { display: flex; gap: 8px; align-items: baseline; }
+.inboxkeys-contact-thread-subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inboxkeys-contact-thread.is-unread .inboxkeys-contact-thread-subject { font-weight: 600; }
+.inboxkeys-contact-thread-date { flex: none; font-size: 11px; color: var(--ik-text-subtle); }
+.inboxkeys-contact-thread-snippet {
+  font-size: 12px; color: var(--ik-text-muted); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.inboxkeys-contact-empty { color: var(--ik-text-muted); font-size: 12px; line-height: 1.45; }
+.inboxkeys-contact-more {
+  margin-top: 12px; border: 0; background: transparent; color: var(--ik-accent);
+  font: inherit; font-size: 12px; cursor: pointer; padding: 0;
+}
+.inboxkeys-contact-more:hover { text-decoration: underline; }

@@ -1,6 +1,6 @@
 # Keyline Privacy Policy
 
-Last updated: November 10, 2026
+Last updated: November 12, 2026
 
 Keyline is a Chrome extension that adds a command palette, keyboard shortcuts, split-inbox tabs, and account switching to Gmail and Google Calendar. It is a fork of the open-source Inbox Keys extension.
 
@@ -8,10 +8,14 @@ Keyline is a Chrome extension that adds a command palette, keyboard shortcuts, s
 
 Nothing.
 
-- No email or calendar content is read, stored, or transmitted. Keyline drives Gmail's and Calendar's existing interface in your browser. It does not use the Gmail or Calendar APIs and has no access tokens.
+- No email or calendar content is stored or transmitted. Keyline drives Gmail's and Calendar's existing interface in your browser. It does not use the Gmail or Calendar APIs and has no access tokens.
 - No analytics, telemetry, or tracking of any kind.
 - No remote servers. The extension makes no network requests of its own.
 - No accounts. There is nothing to sign up for.
+
+## What Keyline keeps in memory
+
+The contact sidebar (the `i` key) lists your recent conversations with the person you are reading. It builds that list from the conversation rows Gmail has already shown in the same tab: sender, subject, snippet and date. The list lives only in that tab's memory. It is never written to storage, never synced and never sent anywhere, and it is gone when you close or reload the tab.
 
 ## What Keyline stores
 

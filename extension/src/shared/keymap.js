@@ -71,6 +71,7 @@
     // Search
     { id: "search", title: "Search mail…", group: "Search", defaultKeys: ["/"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mail-from-sender", title: "All mail from this sender", group: "Search", defaultKeys: ["g f"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "contact-sidebar", title: "Toggle contact sidebar", group: "Search", defaultKeys: ["i"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mail-from-domain", title: "All mail from this sender's domain", group: "Search", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
 
     // Help

@@ -113,6 +113,7 @@ function tryLoadContentScripts(bodyHtml) {
     "src/content/commands.js",
     "src/content/palette.js",
     "src/content/later.js",
+    "src/content/contacts.js",
     "src/content/hotkeys.js",
   ]);
   return window;
