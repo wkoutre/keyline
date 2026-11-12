@@ -195,6 +195,9 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("mail-from-sender", () => mailFrom("sender")),
       cmd("mail-from-domain", () => mailFrom("domain")),
 
+      // View
+      cmd("focus-mode", () => InboxKeys.focus.toggle()),
+
       // Help
       cmd("shortcuts-help", () => InboxKeys.cheatsheet.toggle(cheatsheetSpec)),
     ];
@@ -235,7 +238,7 @@ window.InboxKeys = window.InboxKeys || {};
     },
   ];
 
-  const SHEET_GROUP_ORDER = ["Triage", "Compose", "Labels", "Go to", "Search", "Navigation", "Tabs", "Calendar", "Help"];
+  const SHEET_GROUP_ORDER = ["Triage", "Compose", "Labels", "Go to", "Search", "Navigation", "Tabs", "Calendar", "View", "Help"];
 
   // Built when the sheet opens, so remapped keys show as remapped.
   function cheatsheetSpec() {

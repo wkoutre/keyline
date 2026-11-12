@@ -110,6 +110,7 @@ function tryLoadContentScripts(bodyHtml) {
     "src/content/listnav.js",
     "src/content/threadnav.js",
     "src/content/tabs.js",
+    "src/content/focus.js",
     "src/content/commands.js",
     "src/content/palette.js",
     "src/content/later.js",
