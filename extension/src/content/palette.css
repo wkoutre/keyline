@@ -713,3 +713,31 @@ tr.zA.inboxkeys-cursor > td:first-child { box-shadow: inset 4px 0 0 0 var(--ik-c
   font-size: 12px;
   color: var(--ik-text-muted);
 }
+
+/* ---- Focus mode ---- */
+/* focus.js sets data-keyline-focus="on" on <html> and marks the side panes of
+   Gmail's body row (app rail, folder pane, side-panel rail) with
+   data-keyline-focus-hide. The main column is never marked, so it takes the
+   width. The two landmark rules are a fallback if the row walk ever misses. */
+html[data-keyline-focus="on"] [data-keyline-focus-hide],
+html[data-keyline-focus="on"] [role="navigation"],
+html[data-keyline-focus="on"] [role="complementary"][aria-label="Side panel"] {
+  display: none !important;
+}
+.keyline-focus-pill {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: 600 12px/1.2 var(--ik-font);
+  background: var(--ik-toast-bg);
+  color: var(--ik-toast-text);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.keyline-focus-pill:hover,
+.keyline-focus-pill:focus-visible { opacity: 1; }

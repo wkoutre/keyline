@@ -19,6 +19,9 @@ window.InboxKeys = window.InboxKeys || {};
     // After archive/delete/snooze/spam/mute in an open conversation, open the
     // next (older) conversation instead of returning to the list.
     autoAdvance: true,
+    // Focus mode: Gmail's side panes hidden so the list/thread fills the
+    // window (see focus.js). Syncs like other preferences.
+    focusMode: false,
     // UI theme for every Keyline surface (see src/shared/theme.js). Syncs.
     theme: "keyline",
     // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
