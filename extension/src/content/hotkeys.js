@@ -382,6 +382,13 @@ window.InboxKeys = window.InboxKeys || {};
         gmail.unsubscribe();
         return;
       }
+      // Mod+Z (outside text fields, where it stays the editor's own undo):
+      // Gmail's "Message sent" Undo while the undo-send window is open.
+      if (modKey === "z") {
+        consume(e);
+        gmail.undoSend();
+        return;
+      }
       if (modKey === "o" && ctx === "threadView") {
         consume(e);
         gmail.openLinkOrAttachment(threadnav.currentCard ? threadnav.currentCard() : document);

@@ -111,6 +111,7 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("forward", () => gmail.forwardThread(InboxKeys.threadnav.currentCard() || document)),
       cmd("open-link-or-attachment", () => gmail.openLinkOrAttachment(InboxKeys.threadnav.currentCard() || document)),
       cmd("attach-file", () => gmail.attachFile()),
+      cmd("undo-send", () => gmail.undoSend()),
       cmd("discard-draft", () => gmail.discardDraft()),
 
       // Triage (archive is context-aware: open thread vs. selected/cursor rows)
@@ -300,6 +301,23 @@ window.InboxKeys = window.InboxKeys || {};
     ];
   }
 
+  // "Undo send window: N seconds" rows: change Gmail's own Undo Send setting
+  // (undosend.js drives Settings > General). The known current value is marked.
+  function undoSendWindowCommands() {
+    const U = InboxKeys.undoSend;
+    if (!U) return [];
+    const cur = U.windowSeconds();
+    return gmail.UNDO_SEND_CHOICES.map((n) => ({
+      id: "undo-send-window:" + n,
+      title: `Undo send window: ${n} seconds`,
+      group: "Settings",
+      hint: n === cur ? "current" : undefined,
+      keys: [],
+      contexts: InboxKeys_KEYMAP.DEFAULT_CONTEXTS,
+      run: () => U.setWindow(n),
+    }));
+  }
+
   // One row per theme ("Theme: Clay (Claude-inspired)"), current one marked.
   // Applies instantly and syncs. Mirrors the Appearance pane in settings.
   function themeCommands() {
@@ -424,7 +442,7 @@ window.InboxKeys = window.InboxKeys || {};
 
   // Built fresh each time the palette opens so tab/account/override state is current.
   function all() {
-    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...themeCommands(), ...accountCommands(), ...extra];
+    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...undoSendWindowCommands(), ...themeCommands(), ...accountCommands(), ...extra];
   }
 
   // Allow late registration (e.g. from custom user config later).

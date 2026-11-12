@@ -140,6 +140,17 @@
 }
 .inboxkeys-toast--in { opacity: 1; transform: translateY(0); }
 .inboxkeys-toast--warn { background: var(--ik-toast-warn); }
+/* Undo-send countdown: its own spot above the toast stack, clickable. */
+.inboxkeys-undosend {
+  position: fixed;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.inboxkeys-undosend.inboxkeys-toast--in { transform: translateX(-50%); }
 
 /* ---- Split-inbox tab bar ---- */
 .inboxkeys-tabbar {
