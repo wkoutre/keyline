@@ -1,4 +1,4 @@
-# Inbox Keys
+# Keyline (fork of Inbox Keys)
 
 A Superhuman-style layer for Gmail, shipped as a zero-dependency Chrome extension (Manifest V3). It adds a Cmd+K command palette, keyboard shortcuts and chords, split-inbox tabs, fast account switching, a calendar key, and a unified-calendar layer on Google Calendar. No Gmail API, no server, no AI, no build step. The only permission requested is `storage` (plus `host_permissions` for `mail.google.com` and `calendar.google.com`). Everything works by driving Gmail's and Google Calendar's own UI from content scripts.
 

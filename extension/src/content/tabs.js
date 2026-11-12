@@ -185,8 +185,8 @@ window.InboxKeys = window.InboxKeys || {};
     });
     const gear = document.createElement("button");
     gear.className = "inboxkeys-tab-gear";
-    gear.title = "Configure InboxKeys Tabs";
-    gear.setAttribute("aria-label", "Configure InboxKeys Tabs");
+    gear.title = "Configure Keyline tabs";
+    gear.setAttribute("aria-label", "Configure Keyline tabs");
     gear.innerHTML = GEAR_SVG;
     gear.addEventListener("click", openConfig);
     el.appendChild(gear);
@@ -311,12 +311,12 @@ window.InboxKeys = window.InboxKeys || {};
       <div class="inboxkeys-modal inboxkeys-cfg" role="dialog" aria-label="Configure tabs">
         <div class="inboxkeys-cfg-head">
           <div>
-            <div class="inboxkeys-cfg-title">InboxKeys settings</div>
+            <div class="inboxkeys-cfg-title">Keyline settings</div>
             <div class="inboxkeys-cfg-sub">Tune your split inbox, keyboard shortcuts and theme without leaving Gmail. Search shortcuts by action, group, or key.</div>
           </div>
           <button class="inboxkeys-cfg-x" aria-label="Close">esc</button>
         </div>
-        <div class="inboxkeys-cfg-tabs" role="tablist" aria-label="InboxKeys settings sections">
+        <div class="inboxkeys-cfg-tabs" role="tablist" aria-label="Keyline settings sections">
           <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="tabs">Tabs</button>
           <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="shortcuts">Keyboard shortcuts</button>
           <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="appearance">Appearance</button>
