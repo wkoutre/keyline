@@ -259,4 +259,33 @@ assert.doesNotMatch(
   "No caller may take 'the last visible composeBody match' directly; go through composeBody()/composeEditors()"
 );
 
+// Branding: the product is Keyline. Internal identifiers (window.InboxKeys,
+// InboxKeys_KEYMAP, inboxkeys-* classes, storage keys, message types) stay so
+// saved settings and wiring keep working, but no user-visible text may say
+// "InboxKeys" or "Inbox Keys" (it once showed "InboxKeys settings..." in Cmd+K).
+function leftoverBranding(dir) {
+  const hits = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) { hits.push(...leftoverBranding(file)); continue; }
+    if (!/\.(js|html|css|json)$/.test(entry.name)) continue;
+    fs.readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return; // comments are not user-visible
+      const visible = line
+        .replace(/\b(window|root|self|globalThis)\.InboxKeys\b/g, "")
+        .replace(/\bInboxKeys(?=[._]|\s*[;=|)}])/g, "")
+        .replace(/\{\s*[\w\s,]+\}\s*=\s*InboxKeys\b/g, "");
+      if (/Inbox ?Keys/.test(visible)) hits.push(`${path.relative(root, file)}:${i + 1}: ${line.trim()}`);
+    });
+  }
+  return hits;
+}
+assert.deepEqual(leftoverBranding(path.join(root, "src")), [], "User-visible text must say Keyline, not InboxKeys");
+assert.deepEqual(leftoverBranding(path.join(root, "smoke")), [], "Smoke output must say Keyline, not InboxKeys");
+assert.match(
+  fs.readFileSync(path.join(root, "manifest.json"), "utf8"),
+  /"name":\s*"Keyline/,
+  "Extension name must be Keyline"
+);
+
 console.log("key behavior simulations passed");
