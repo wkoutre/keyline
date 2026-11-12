@@ -236,10 +236,9 @@ window.InboxKeys = window.InboxKeys || {};
       const ib = SHEET_GROUP_ORDER.indexOf(b);
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
-    const hotkey = (storage.get("paletteHotkey") || "mod+k")
-      .split("+")
-      .map((part) => (part === "mod" ? "Mod" : part.toUpperCase()))
-      .join("+");
+    const KM = window.InboxKeys_KEYMAP;
+    const rawHotkey = storage.get("paletteHotkey") || "Mod+K";
+    const hotkey = KM && typeof KM.normalizePaletteHotkey === "function" ? KM.normalizePaletteHotkey(rawHotkey) : rawHotkey;
     const paletteSection = { title: "Command palette", rows: [{ label: "Open the command palette", keys: [hotkey] }] };
     return {
       title: "Keyline keyboard shortcuts",

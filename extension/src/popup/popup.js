@@ -9,6 +9,12 @@ async function init() {
   const s = await settings.load();
   TOGGLES.forEach((k) => ($(k).checked = s[k] ?? DEFAULT_ON.has(k)));
 
+  // Show the user's palette key (remappable in settings), e.g. "Cmd+K".
+  const KM = window.InboxKeys_KEYMAP;
+  if (KM && typeof KM.normalizePaletteHotkey === "function") {
+    $("palette-key").textContent = KM.displayBinding(KM.normalizePaletteHotkey(s.paletteHotkey));
+  }
+
   // Show current account email if we can read it from the active Gmail tab.
   chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     if (!tab || !/mail\.google\.com/.test(tab.url || "")) {

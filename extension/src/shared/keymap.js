@@ -109,5 +109,122 @@
       .join(" ");
   }
 
-  window.InboxKeys_KEYMAP = { DEFAULT_CONTEXTS, commands, keysFor, displayBinding, displayKeyPart, modLabel };
+  // ---- Command palette hotkey ---------------------------------------------
+  // Stored as storage.paletteHotkey in catalog token style ("Mod+K",
+  // "Mod+Shift+P", "Alt+K"). Older builds stored lowercase "mod+k" / "mod+j" /
+  // "mod+/"; normalizePaletteHotkey upgrades those on read. "Mod" matches Cmd
+  // or Ctrl (as it always has), so the same setting works on Mac and Windows.
+  const PALETTE_DEFAULT = "Mod+K";
+  const MOD_ORDER = ["Mod", "Ctrl", "Alt", "Shift"];
+
+  function normalizePaletteHotkey(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return PALETTE_DEFAULT;
+    // Split on "+" but keep a literal "+" key ("Mod++").
+    const parts = raw.endsWith("++") ? raw.slice(0, -2).split("+").concat("+") : raw.split("+");
+    const mods = new Set();
+    let key = "";
+    for (const p of parts) {
+      const lower = p.toLowerCase();
+      if (lower === "mod" || lower === "cmd" || lower === "meta") mods.add("Mod");
+      else if (lower === "ctrl" || lower === "control") mods.add("Ctrl");
+      else if (lower === "alt" || lower === "option") mods.add("Alt");
+      else if (lower === "shift") mods.add("Shift");
+      else key = p.length === 1 ? p.toUpperCase() : p;
+    }
+    if (!key) return PALETTE_DEFAULT;
+    // Shift only counts for letters (a symbol already encodes it: "?" not "Shift+/").
+    if (!/^[A-Z]$/.test(key)) mods.delete("Shift");
+    return MOD_ORDER.filter((m) => mods.has(m)).concat(key).join("+");
+  }
+
+  // The physical key of a keydown, layout-stable: Option+K on a Mac reports
+  // e.key "˚", so letters and digits come from e.code when it is present.
+  function eventKey(e) {
+    const code = String(e.code || "");
+    let m = code.match(/^Key([A-Z])$/);
+    if (m) return m[1];
+    m = code.match(/^Digit(\d)$/);
+    if (m) return m[1];
+    const k = String(e.key || "");
+    if (k === " ") return "Space";
+    return k.length === 1 ? k.toUpperCase() : k;
+  }
+
+  // The binding a keydown would record as ("Mod+Shift+P"), or "" for a lone
+  // modifier press. Used by the options recorder.
+  function paletteBindingFromEvent(e) {
+    const k = String(e.key || "");
+    if (!k || k === "Shift" || k === "Control" || k === "Alt" || k === "Meta") return "";
+    const mods = [];
+    if (e.metaKey) mods.push("Mod");
+    if (e.ctrlKey) mods.push(e.metaKey ? "Ctrl" : "Mod");
+    if (e.altKey) mods.push("Alt");
+    if (e.shiftKey) mods.push("Shift");
+    return normalizePaletteHotkey(mods.concat(eventKey(e)).join("+"));
+  }
+
+  function matchesPaletteHotkey(e, binding) {
+    const want = normalizePaletteHotkey(binding).split("+");
+    const key = want.pop();
+    if (eventKey(e) !== key) return false;
+    const has = (m) => want.includes(m);
+    const letter = /^[A-Z]$/.test(key);
+    if (has("Mod")) {
+      if (!(e.metaKey || e.ctrlKey)) return false;
+    } else if (has("Ctrl")) {
+      if (!e.ctrlKey || e.metaKey) return false;
+    } else if (e.metaKey || e.ctrlKey) return false;
+    if (has("Mod") && has("Ctrl") && !(e.metaKey && e.ctrlKey)) return false;
+    if (!!e.altKey !== has("Alt")) return false;
+    if (letter && !!e.shiftKey !== has("Shift")) return false;
+    return true;
+  }
+
+  // Why a palette binding can't be used, or "" when it is fine. The palette
+  // opens even while typing, so a bare key (or Shift+key) would eat text; the
+  // editing and browser-owned keys would break typing or never reach the page.
+  const RESERVED_PALETTE_KEYS = new Set([
+    "Mod+A", "Mod+C", "Mod+V", "Mod+X", "Mod+Z", "Mod+Shift+Z", "Mod+Y",
+    "Mod+T", "Mod+W", "Mod+N", "Mod+Q", "Mod+R", "Mod+L", "Mod+F", "Mod+P", "Mod+S",
+    "Mod+Shift+T", "Mod+Shift+N", "Mod+Shift+W",
+  ]);
+  function paletteHotkeyProblem(binding, overrides) {
+    const b = normalizePaletteHotkey(binding);
+    const parts = b.split("+");
+    if (!parts.some((p) => p === "Mod" || p === "Ctrl" || p === "Alt")) {
+      return "Use Cmd, Ctrl or Option/Alt with a key, so typing never opens the palette.";
+    }
+    if (parts[parts.length - 1].length > 1 && !/^F\d+$/.test(parts[parts.length - 1]) && parts[parts.length - 1] !== "Space") {
+      return "Pick a letter, number or symbol key.";
+    }
+    if (RESERVED_PALETTE_KEYS.has(b)) return displayBinding(b) + " is a browser or editing shortcut.";
+    for (const cmd of commands) {
+      if (keysFor(cmd.id, overrides).some((k) => normalizePaletteHotkey(k) === b)) {
+        return displayBinding(b) + " is already used by " + cmd.title + ".";
+      }
+    }
+    return "";
+  }
+
+  // True when the keydown is Cmd/Ctrl+K inside a rich-text editor that has
+  // text selected: that is Gmail's (and Calendar's) "insert link" shortcut, so
+  // the palette leaves it alone and the editor gets the real keystroke.
+  function isEditorLinkShortcut(e, doc) {
+    if (eventKey(e) !== "K" || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return false;
+    const t = e.target;
+    if (!t || t.nodeType !== 1 || typeof t.closest !== "function") return false;
+    const editor = t.closest('[contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]');
+    if (!editor) return false;
+    const d = doc || t.ownerDocument;
+    const sel = d && d.getSelection ? d.getSelection() : null;
+    if (!sel || sel.isCollapsed || !sel.rangeCount || !String(sel.toString()).trim()) return false;
+    return editor.contains(sel.anchorNode) && editor.contains(sel.focusNode);
+  }
+
+  window.InboxKeys_KEYMAP = {
+    DEFAULT_CONTEXTS, commands, keysFor, displayBinding, displayKeyPart, modLabel,
+    PALETTE_DEFAULT, normalizePaletteHotkey, paletteBindingFromEvent, matchesPaletteHotkey,
+    paletteHotkeyProblem, isEditorLinkShortcut,
+  };
 })();
