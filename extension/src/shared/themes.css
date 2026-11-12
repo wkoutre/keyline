@@ -490,9 +490,9 @@
     --ik-accent-ring: rgba(59, 155, 255, 0.26);
     --ik-accent-fill: #3b9bff;
     --ik-on-accent: #ffffff;
-    --ik-row-active: #2c2c2e;
-    --ik-prompt-bg: #f5f5f7;
-    --ik-prompt-text: #141414;
+    --ik-row-active: #1d2c3d;
+    --ik-prompt-bg: #3b9bff;
+    --ik-prompt-text: #ffffff;
     --ik-btn-bg: #f5f5f7;
     --ik-btn-text: #141414;
     --ik-success-bg: #12341f;
