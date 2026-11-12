@@ -121,6 +121,15 @@ window.InboxKeys = window.InboxKeys || {};
     timeInput: 'input[aria-label="Time"]',
     sendOptions: '[aria-label="More send options"], [data-tooltip="More send options"]',
     scheduleDialog: '[role="dialog"][aria-label="Schedule send"]',
+    // Undo send. Gmail holds a sent message for its "Undo Send" cancellation
+    // period (Settings > General: 5, 10, 20 or 30 s) and meanwhile shows a
+    // "Message sent  Undo  View message" snackbar whose Undo link is
+    // span#link_undo. The snackbar text tells a send apart from the Undo of an
+    // archive or a delete. The setting itself is a plain <select> found by its
+    // option SHAPE (5/10/20/30), not by a name Gmail may rename.
+    sendUndo: "#link_undo",
+    sendSnackbarText: /^(Message sent|Sending|Send scheduled|Scheduled for)\b/i,
+    settingsSave: /^Save Changes$/i,
   };
 
   // First visible match for a selector, or null.
@@ -497,6 +506,89 @@ window.InboxKeys = window.InboxKeys || {};
     return false;
   }
 
+  // ---- Undo send -------------------------------------------------------------
+  // The Undo link of Gmail's "Message sent" snackbar, or null once the undo
+  // window has closed. The id is the fast path; the fallback is any visible
+  // Undo control outside a toolbar whose snackbar says the message was sent,
+  // so the Undo of an archive or a delete never counts.
+  // True when el sits in a snackbar that is about a SEND. Gmail reuses
+  // span#link_undo for other snackbars ("Draft discarded. Undo" verified live
+  // Nov 2026), so the id alone never proves it is an undo send.
+  function inSendSnackbar(el) {
+    for (let box = el && el.parentElement, i = 0; box && i < 5; box = box.parentElement, i++) {
+      const text = (box.textContent || "").trim().replace(/\s+/g, " ");
+      if (SEL.sendSnackbarText.test(text)) return true;
+    }
+    return false;
+  }
+
+  // Fast path, cheap enough to poll: the visible span#link_undo of a send
+  // snackbar. Its text is "Cancel" while Gmail says "Sending...", then "Undo".
+  function sendUndoLink() {
+    const el = document.querySelector(SEL.sendUndo);
+    return el && isVisible(el) && /^(Undo|Cancel)$/i.test(controlLabel(el)) && inSendSnackbar(el) ? el : null;
+  }
+
+  function sendUndoControl() {
+    const byId = sendUndoLink();
+    if (byId) return byId;
+    return (
+      visibleControls(document).find((el) => {
+        if (!/^Undo$/i.test(controlLabel(el)) || (el.closest && el.closest(SEL.toolbars))) return false;
+        return inSendSnackbar(el);
+      }) || null
+    );
+  }
+
+  function undoSend() {
+    const btn = sendUndoControl();
+    if (btn) return realClick(btn);
+    if (InboxKeys.toast) InboxKeys.toast("Nothing to unsend: the undo window has closed", { kind: "info" });
+    return false;
+  }
+
+  // Gmail's "Send cancellation period" <select> on Settings > General: the
+  // select whose options are exactly 5, 10, 20 and 30 seconds.
+  const UNDO_SEND_CHOICES = [5, 10, 20, 30];
+  function undoSendSelect() {
+    return (
+      Array.from(document.querySelectorAll("select")).find((sel) => {
+        const nums = Array.from(sel.options || [])
+          .map((o) => parseInt(o.value || o.textContent, 10))
+          .sort((a, b) => a - b);
+        return nums.length === UNDO_SEND_CHOICES.length && nums.every((n, i) => n === UNDO_SEND_CHOICES[i]);
+      }) || null
+    );
+  }
+
+  function undoSendSelectSeconds(sel) {
+    const opt = sel && sel.options && sel.options[sel.selectedIndex];
+    const n = opt ? parseInt(opt.value || opt.textContent, 10) : NaN;
+    return UNDO_SEND_CHOICES.includes(n) ? n : null;
+  }
+
+  // Pick an option the way a person would: the native value setter, then input
+  // and change so Gmail enables its Save Changes button.
+  function setSelectSeconds(sel, seconds) {
+    const opt = Array.from(sel.options).find((o) => parseInt(o.value || o.textContent, 10) === seconds);
+    if (!opt) return false;
+    if (typeof sel.focus === "function") sel.focus();
+    const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+    if (desc && desc.set) desc.set.call(sel, opt.value);
+    else sel.value = opt.value;
+    sel.dispatchEvent(new Event("input", { bubbles: true }));
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
+  function settingsSaveButton() {
+    return (
+      Array.from(document.querySelectorAll('button, [role="button"]'))
+        .filter(isVisible)
+        .find((el) => SEL.settingsSave.test(controlLabel(el)) && !el.disabled && el.getAttribute("aria-disabled") !== "true") || null
+    );
+  }
+
   const STAR_PATTERNS = [/^Star$/i, /^Not starred$/i, /^Add star$/i, /^Remove star$/i, /^Starred$/i];
   function toggleStar(scope = document) {
     return clickControl(
@@ -636,7 +728,7 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   // Called right after the Snooze menu button was clicked.
-  function snoozeUntil(when) {
+  function snoozeUntil(when, what) {
     return waitFor(
       () => {
         const menu = Array.from(document.querySelectorAll(SEL.snoozeMenu)).filter(isShowing)[0];
@@ -644,7 +736,7 @@ window.InboxKeys = window.InboxKeys || {};
       },
       (item) => {
         realClick(item);
-        fillDateTime(when, [/^Save$/i, /^Snooze$/i], "Snoozed until");
+        fillDateTime(when, [/^Save$/i, /^Snooze$/i], what || "Snoozed until");
       },
       () => {
         logMissingControl("Snooze (Pick date & time)");
@@ -1213,6 +1305,16 @@ window.InboxKeys = window.InboxKeys || {};
   // The old labeledButton(/^Forward\b/) fallback is gone: it prefix-matched
   // "Forward all" and other strays document-wide. Never reintroduce it.
 
+  // True once an open conversation shows its inline Reply / Reply all /
+  // Forward controls (or a labeled Reply button), i.e. reply and forward can
+  // act. listnav.openThen waits on this after opening a row.
+  function threadComposeReady() {
+    return !!(
+      amsButton(/^(reply|reply all|forward)\b/i) ||
+      labeledButton([/^Reply\b/i], document)
+    );
+  }
+
   function inlineForward(scope = document) {
     return amsButton(/^forward$/i, scope) || exactButton("Forward", scope);
   }
@@ -1725,6 +1827,8 @@ window.InboxKeys = window.InboxKeys || {};
 
   InboxKeys.gmail = {
     SEL,
+    threadComposeReady,
+    waitFor,
     firstVisible,
     verifySelectors,
     accountIndex,
@@ -1744,6 +1848,14 @@ window.InboxKeys = window.InboxKeys || {};
     compose,
     action,
     undo,
+    undoSend,
+    sendUndoControl,
+    sendUndoLink,
+    undoSendSelect,
+    undoSendSelectSeconds,
+    setSelectSeconds,
+    settingsSaveButton,
+    UNDO_SEND_CHOICES,
     toggleStar,
     attachFile,
     discardDraft,

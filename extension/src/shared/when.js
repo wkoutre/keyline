@@ -225,6 +225,13 @@
   function presets(now, kind) {
     now = now || new Date();
     const out = [];
+    // "Remind me if no reply": whole days out, at 8 AM like other bare days.
+    if (kind === "followup") {
+      for (const [id, n, title] of [["1d", 1, "In 1 day"], ["2d", 2, "In 2 days"], ["3d", 3, "In 3 days"], ["1w", 7, "In 1 week"]]) {
+        out.push({ id: "followup-" + id, title, when: at(addDays(now, n), DEFAULT_HOUR, 0) });
+      }
+      return out;
+    }
     const later = new Date(now.getTime() + 3 * 3600000);
     later.setMinutes(later.getMinutes() > 0 ? 60 : 0, 0, 0);
     if (later.getDate() === now.getDate() && later.getHours() <= 21) out.push({ id: "later-today", title: "Later today", when: later });

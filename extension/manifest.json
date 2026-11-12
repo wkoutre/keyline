@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keyline: keyboard shortcuts & command palette for Gmail",
-  "version": "0.7.8",
+  "version": "0.7.11",
   "description": "Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, and account switching for Gmail and Google Calendar.",
   "icons": {
     "16": "icons/icon16.png",
@@ -53,10 +53,12 @@
         "src/content/listnav.js",
         "src/content/threadnav.js",
         "src/content/tabs.js",
+        "src/content/focus.js",
         "src/content/commands.js",
         "src/content/palette.js",
         "src/content/later.js",
         "src/content/contacts.js",
+        "src/content/undosend.js",
         "src/content/hotkeys.js",
         "src/content/content.js"
       ],

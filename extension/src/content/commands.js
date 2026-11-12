@@ -51,6 +51,18 @@ window.InboxKeys = window.InboxKeys || {};
     return action();
   }
 
+  // Instant reply / reply-all / forward: in the list, open the cursor
+  // conversation and run the thread action once Gmail has rendered it, so one
+  // keystroke goes from the inbox to a draft. In a conversation, run it as is.
+  function fromList(threadAction, what) {
+    return () => {
+      if (gmail.getContext() === "inboxList" && InboxKeys.listnav && InboxKeys.listnav.openThen) {
+        return InboxKeys.listnav.openThen(threadAction, what);
+      }
+      return threadAction();
+    };
+  }
+
   // In an open conversation, run a thread-removing action with auto-advance
   // armed (see listnav.advancing). Snooze gets a longer window because Gmail
   // only returns to the list after you pick a time in its picker.
@@ -106,11 +118,12 @@ window.InboxKeys = window.InboxKeys || {};
     return [
       // Compose / messaging
       cmd("compose", () => gmail.compose()),
-      cmd("reply", () => gmail.replyToThread()),
-      cmd("reply-all", () => gmail.replyAllToThread(InboxKeys.threadnav.currentCard() || document)),
-      cmd("forward", () => gmail.forwardThread(InboxKeys.threadnav.currentCard() || document)),
+      cmd("reply", fromList(() => gmail.replyToThread(), "reply")),
+      cmd("reply-all", fromList(() => gmail.replyAllToThread(InboxKeys.threadnav.currentCard() || document), "reply all")),
+      cmd("forward", fromList(() => gmail.forwardThread(InboxKeys.threadnav.currentCard() || document), "forward")),
       cmd("open-link-or-attachment", () => gmail.openLinkOrAttachment(InboxKeys.threadnav.currentCard() || document)),
       cmd("attach-file", () => gmail.attachFile()),
+      cmd("undo-send", () => gmail.undoSend()),
       cmd("discard-draft", () => gmail.discardDraft()),
 
       // Triage (archive is context-aware: open thread vs. selected/cursor rows)
@@ -122,6 +135,7 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("mark-read", () => gmail.action(["Mark as read"])),
       cmd("mark-unread", () => gmail.action(["Mark as unread"])),
       cmd("snooze", () => InboxKeys.later.snooze(snoozeOpener())),
+      cmd("remind-no-reply", () => InboxKeys.later.remindNoReply(snoozeOpener())),
       cmd("schedule-send", () => InboxKeys.later.scheduleSend()),
       cmd("report-spam", advancing(() => gmail.action(["Report spam"]))),
       cmd("star", () => (gmail.getContext() === "threadView" ? gmail.toggleStar(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.toggleStar())),
@@ -182,6 +196,9 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("mail-from-domain", () => mailFrom("domain")),
       cmd("contact-sidebar", () => InboxKeys.contacts.toggle()),
 
+      // View
+      cmd("focus-mode", () => InboxKeys.focus.toggle()),
+
       // Help
       cmd("shortcuts-help", () => InboxKeys.cheatsheet.toggle(cheatsheetSpec)),
     ];
@@ -222,7 +239,7 @@ window.InboxKeys = window.InboxKeys || {};
     },
   ];
 
-  const SHEET_GROUP_ORDER = ["Triage", "Compose", "Labels", "Go to", "Search", "Navigation", "Tabs", "Calendar", "Help"];
+  const SHEET_GROUP_ORDER = ["Triage", "Compose", "Labels", "Go to", "Search", "Navigation", "Tabs", "Calendar", "View", "Help"];
 
   // Built when the sheet opens, so remapped keys show as remapped.
   function cheatsheetSpec() {
@@ -299,6 +316,23 @@ window.InboxKeys = window.InboxKeys || {};
         run: () => gmail.verifySelectors(),
       },
     ];
+  }
+
+  // "Undo send window: N seconds" rows: change Gmail's own Undo Send setting
+  // (undosend.js drives Settings > General). The known current value is marked.
+  function undoSendWindowCommands() {
+    const U = InboxKeys.undoSend;
+    if (!U) return [];
+    const cur = U.windowSeconds();
+    return gmail.UNDO_SEND_CHOICES.map((n) => ({
+      id: "undo-send-window:" + n,
+      title: `Undo send window: ${n} seconds`,
+      group: "Settings",
+      hint: n === cur ? "current" : undefined,
+      keys: [],
+      contexts: InboxKeys_KEYMAP.DEFAULT_CONTEXTS,
+      run: () => U.setWindow(n),
+    }));
   }
 
   // One row per theme ("Theme: Clay (Claude-inspired)"), current one marked.
@@ -425,7 +459,7 @@ window.InboxKeys = window.InboxKeys || {};
 
   // Built fresh each time the palette opens so tab/account/override state is current.
   function all() {
-    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...themeCommands(), ...accountCommands(), ...extra];
+    return [...buildBase(), ...tabCommands(), ...settingsCommands(), ...undoSendWindowCommands(), ...themeCommands(), ...accountCommands(), ...extra];
   }
 
   // Allow late registration (e.g. from custom user config later).

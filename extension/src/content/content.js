@@ -8,7 +8,10 @@
   // Theme first, so the tab bar and everything after paints in it.
   if (InboxKeys.theme) InboxKeys.theme.init(storage);
 
+  if (InboxKeys.focus) InboxKeys.focus.init(storage);
+
   hotkeys.install();
+  if (InboxKeys.undoSend) InboxKeys.undoSend.start();
   tabs.init();
   if (InboxKeys.contacts) InboxKeys.contacts.init();
 
