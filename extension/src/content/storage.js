@@ -19,6 +19,8 @@ window.InboxKeys = window.InboxKeys || {};
     // After archive/delete/snooze/spam/mute in an open conversation, open the
     // next (older) conversation instead of returning to the list.
     autoAdvance: true,
+    // UI theme for every Keyline surface (see src/shared/theme.js). Syncs.
+    theme: "keyline",
     // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
     paletteRecents: [],
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special

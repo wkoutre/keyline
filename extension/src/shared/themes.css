@@ -1,0 +1,515 @@
+/* Keyline theme tokens. Every Keyline surface reads only these --ik-* custom
+   properties; theme.js picks the theme by setting data-inboxkeys-theme on
+   <html>. Each theme defines EVERY color token in both its light block and its
+   dark block (tests/themes.test.js pins this), so a theme never leaks colors
+   from another theme or from the default's dark mode.
+
+   Specificity: the default is `:root` (0,1,0) and a theme is
+   `:root[data-inboxkeys-theme=x]` (0,2,0), so a theme always beats the
+   default, including the default's dark block. A theme's own dark block comes
+   after its light block at equal specificity, so it wins in dark mode. */
+
+/* ---- Keyline (default): indigo and slate ---- */
+:root,
+:root[data-inboxkeys-theme="keyline"] {
+  --ik-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ik-font-display: var(--ik-font);
+  --ik-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ik-title-weight: 600;
+  --ik-radius: 14px;
+  --ik-radius-md: 8px;
+  --ik-radius-sm: 5px;
+  --ik-radius-btn: 8px;
+  --ik-scrim-blur: 2px;
+
+  --ik-scrim: rgba(15, 23, 42, 0.45);
+  --ik-shadow: 0 24px 64px rgba(2, 6, 23, 0.35), 0 2px 8px rgba(2, 6, 23, 0.2);
+  --ik-page: #f8fafc;
+  --ik-surface: #ffffff;
+  --ik-surface-raised: #fbfdff;
+  --ik-surface-sunken: #f8fafc;
+  --ik-fill: #f1f5f9;
+  --ik-text: #0f172a;
+  --ik-text-muted: #64748b;
+  --ik-text-subtle: #94a3b8;
+  --ik-text-kbd: #475569;
+  --ik-border: #e2e8f0;
+  --ik-divider: #eef2f7;
+  --ik-border-strong: #cbd5e1;
+  --ik-accent: #4f46e5;
+  --ik-accent-soft: #eef2ff;
+  --ik-accent-border: #c7d2fe;
+  --ik-accent-ring: rgba(79, 70, 229, 0.16);
+  --ik-accent-fill: #4f46e5;
+  --ik-on-accent: #ffffff;
+  --ik-row-active: #eef2ff;
+  --ik-prompt-bg: #eef2ff;
+  --ik-prompt-text: #4f46e5;
+  --ik-btn-bg: #4f46e5;
+  --ik-btn-text: #ffffff;
+  --ik-success-bg: #dcfce7;
+  --ik-success-text: #166534;
+  --ik-danger-bg: #fee2e2;
+  --ik-danger-border: #fecaca;
+  --ik-danger-text: #b91c1c;
+  --ik-toast-bg: #1f1f24;
+  --ik-toast-text: #ffffff;
+  --ik-toast-warn: #b45309;
+  --ik-tab-text: #5f6368;
+  --ik-tab-hover: rgba(100, 116, 139, 0.12);
+  --ik-tab-accent: #1a73e8;
+  --ik-tab-accent-soft: rgba(26, 115, 232, 0.12);
+  --ik-tabbar-border: rgba(100, 116, 139, 0.18);
+  --ik-cursor-bg: rgba(79, 70, 229, 0.16);
+  --ik-cursor-bar: #4f46e5;
+  --ik-msg-bar: #1a73e8;
+}
+@media (prefers-color-scheme: dark) {
+  :root,
+  :root[data-inboxkeys-theme="keyline"] {
+    --ik-scrim: rgba(0, 0, 0, 0.5);
+    --ik-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --ik-page: #17171b;
+    --ik-surface: #1f1f24;
+    --ik-surface-raised: #1f1f24;
+    --ik-surface-sunken: #17171b;
+    --ik-fill: #2a2a31;
+    --ik-text: #f2f2f4;
+    --ik-text-muted: #a6a6ad;
+    --ik-text-subtle: #8a8a92;
+    --ik-text-kbd: #cfcfd6;
+    --ik-border: #34343d;
+    --ik-divider: #2f2f37;
+    --ik-border-strong: #4a4a55;
+    --ik-accent: #8f92f8;
+    --ik-accent-soft: #3a3a45;
+    --ik-accent-border: #4a4a55;
+    --ik-accent-ring: rgba(124, 127, 246, 0.18);
+    --ik-accent-fill: #7c7ff6;
+    --ik-on-accent: #ffffff;
+    --ik-row-active: #3a3a45;
+    --ik-prompt-bg: #7c7ff6;
+    --ik-prompt-text: #ffffff;
+    --ik-btn-bg: #6366f1;
+    --ik-btn-text: #ffffff;
+    --ik-success-bg: #14532d;
+    --ik-success-text: #bbf7d0;
+    --ik-danger-bg: #3f1517;
+    --ik-danger-border: #7f1d1d;
+    --ik-danger-text: #fca5a5;
+    --ik-toast-bg: #2a2a31;
+    --ik-toast-text: #ffffff;
+    --ik-toast-warn: #b45309;
+    --ik-tab-text: #9aa0a6;
+    --ik-tab-hover: rgba(148, 163, 184, 0.14);
+    --ik-tab-accent: #8ab4f8;
+    --ik-tab-accent-soft: rgba(138, 180, 248, 0.16);
+    --ik-tabbar-border: rgba(148, 163, 184, 0.2);
+    --ik-cursor-bg: rgba(124, 127, 246, 0.2);
+    --ik-cursor-bar: #7c7ff6;
+    --ik-msg-bar: #8ab4f8;
+  }
+}
+
+/* ---- Clay (Claude-inspired): warm ivory, ink, terracotta, serif display ---- */
+:root[data-inboxkeys-theme="clay"] {
+  --ik-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ik-font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --ik-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ik-title-weight: 500;
+  --ik-radius: 16px;
+  --ik-radius-md: 10px;
+  --ik-radius-sm: 6px;
+  --ik-radius-btn: 10px;
+  --ik-scrim-blur: 3px;
+
+  --ik-scrim: rgba(31, 30, 29, 0.32);
+  --ik-shadow: 0 20px 56px rgba(61, 57, 41, 0.22), 0 1px 3px rgba(61, 57, 41, 0.12);
+  --ik-page: #f0eee6;
+  --ik-surface: #faf9f5;
+  --ik-surface-raised: #f5f4ee;
+  --ik-surface-sunken: #f0eee6;
+  --ik-fill: #ebe9df;
+  --ik-text: #1f1e1d;
+  --ik-text-muted: #6b6a64;
+  --ik-text-subtle: #9b998f;
+  --ik-text-kbd: #3d3c37;
+  --ik-border: #e3e0d5;
+  --ik-divider: #ece9df;
+  --ik-border-strong: #d4d0c3;
+  --ik-accent: #c96442;
+  --ik-accent-soft: #f6e8df;
+  --ik-accent-border: #ebc8b6;
+  --ik-accent-ring: rgba(201, 100, 66, 0.18);
+  --ik-accent-fill: #c96442;
+  --ik-on-accent: #ffffff;
+  --ik-row-active: #f1e6dc;
+  --ik-prompt-bg: #f6e8df;
+  --ik-prompt-text: #a9502f;
+  --ik-btn-bg: #c96442;
+  --ik-btn-text: #ffffff;
+  --ik-success-bg: #e3eedb;
+  --ik-success-text: #3d6b2a;
+  --ik-danger-bg: #f8e1dc;
+  --ik-danger-border: #efc4ba;
+  --ik-danger-text: #a33a26;
+  --ik-toast-bg: #2b2a27;
+  --ik-toast-text: #faf9f5;
+  --ik-toast-warn: #a9502f;
+  --ik-tab-text: #6b6a64;
+  --ik-tab-hover: rgba(107, 106, 100, 0.12);
+  --ik-tab-accent: #c96442;
+  --ik-tab-accent-soft: rgba(201, 100, 66, 0.12);
+  --ik-tabbar-border: rgba(107, 106, 100, 0.2);
+  --ik-cursor-bg: rgba(201, 100, 66, 0.13);
+  --ik-cursor-bar: #c96442;
+  --ik-msg-bar: #c96442;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-inboxkeys-theme="clay"] {
+    --ik-scrim: rgba(10, 10, 9, 0.5);
+    --ik-shadow: 0 20px 56px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --ik-page: #1f1e1d;
+    --ik-surface: #262624;
+    --ik-surface-raised: #2b2a27;
+    --ik-surface-sunken: #1f1e1d;
+    --ik-fill: #32312d;
+    --ik-text: #f0eee6;
+    --ik-text-muted: #b7b5a9;
+    --ik-text-subtle: #8d8b82;
+    --ik-text-kbd: #dcd9ce;
+    --ik-border: #3a3935;
+    --ik-divider: #33322e;
+    --ik-border-strong: #4a4843;
+    --ik-accent: #e08a6d;
+    --ik-accent-soft: #3d2c25;
+    --ik-accent-border: #6b3f2f;
+    --ik-accent-ring: rgba(217, 119, 87, 0.24);
+    --ik-accent-fill: #d97757;
+    --ik-on-accent: #ffffff;
+    --ik-row-active: #3a2f29;
+    --ik-prompt-bg: #d97757;
+    --ik-prompt-text: #ffffff;
+    --ik-btn-bg: #d97757;
+    --ik-btn-text: #ffffff;
+    --ik-success-bg: #263a20;
+    --ik-success-text: #b6d9a4;
+    --ik-danger-bg: #3d1f1a;
+    --ik-danger-border: #6b3227;
+    --ik-danger-text: #f0a493;
+    --ik-toast-bg: #3a3935;
+    --ik-toast-text: #f0eee6;
+    --ik-toast-warn: #a9502f;
+    --ik-tab-text: #b7b5a9;
+    --ik-tab-hover: rgba(240, 238, 230, 0.08);
+    --ik-tab-accent: #e08a6d;
+    --ik-tab-accent-soft: rgba(217, 119, 87, 0.16);
+    --ik-tabbar-border: rgba(240, 238, 230, 0.12);
+    --ik-cursor-bg: rgba(217, 119, 87, 0.18);
+    --ik-cursor-bar: #d97757;
+    --ik-msg-bar: #d97757;
+  }
+}
+
+/* ---- Mono (Codex-inspired): monochrome, crisp, terminal-flavored input ---- */
+:root[data-inboxkeys-theme="mono"] {
+  --ik-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  --ik-font-display: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --ik-font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --ik-title-weight: 600;
+  --ik-radius: 10px;
+  --ik-radius-md: 6px;
+  --ik-radius-sm: 4px;
+  --ik-radius-btn: 6px;
+  --ik-scrim-blur: 0px;
+
+  --ik-scrim: rgba(0, 0, 0, 0.36);
+  --ik-shadow: 0 16px 48px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --ik-page: #f7f7f7;
+  --ik-surface: #ffffff;
+  --ik-surface-raised: #fafafa;
+  --ik-surface-sunken: #f5f5f5;
+  --ik-fill: #f0f0f0;
+  --ik-text: #0d0d0d;
+  --ik-text-muted: #5d5d5d;
+  --ik-text-subtle: #8f8f8f;
+  --ik-text-kbd: #0d0d0d;
+  --ik-border: #e5e5e5;
+  --ik-divider: #ededed;
+  --ik-border-strong: #d4d4d4;
+  --ik-accent: #0d0d0d;
+  --ik-accent-soft: #f0f0f0;
+  --ik-accent-border: #cfcfcf;
+  --ik-accent-ring: rgba(13, 13, 13, 0.12);
+  --ik-accent-fill: #0d0d0d;
+  --ik-on-accent: #ffffff;
+  --ik-row-active: #efefef;
+  --ik-prompt-bg: #0d0d0d;
+  --ik-prompt-text: #ffffff;
+  --ik-btn-bg: #0d0d0d;
+  --ik-btn-text: #ffffff;
+  --ik-success-bg: #e8f5ec;
+  --ik-success-text: #17663a;
+  --ik-danger-bg: #fdecec;
+  --ik-danger-border: #f5c9c9;
+  --ik-danger-text: #c42b2b;
+  --ik-toast-bg: #0d0d0d;
+  --ik-toast-text: #ffffff;
+  --ik-toast-warn: #9a4a00;
+  --ik-tab-text: #5d5d5d;
+  --ik-tab-hover: rgba(0, 0, 0, 0.05);
+  --ik-tab-accent: #0d0d0d;
+  --ik-tab-accent-soft: rgba(0, 0, 0, 0.07);
+  --ik-tabbar-border: rgba(0, 0, 0, 0.1);
+  --ik-cursor-bg: rgba(0, 0, 0, 0.06);
+  --ik-cursor-bar: #0d0d0d;
+  --ik-msg-bar: #0d0d0d;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-inboxkeys-theme="mono"] {
+    --ik-scrim: rgba(0, 0, 0, 0.55);
+    --ik-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --ik-page: #111111;
+    --ik-surface: #181818;
+    --ik-surface-raised: #1e1e1e;
+    --ik-surface-sunken: #111111;
+    --ik-fill: #262626;
+    --ik-text: #ececec;
+    --ik-text-muted: #a3a3a3;
+    --ik-text-subtle: #6e6e6e;
+    --ik-text-kbd: #e5e5e5;
+    --ik-border: #2e2e2e;
+    --ik-divider: #262626;
+    --ik-border-strong: #3d3d3d;
+    --ik-accent: #ffffff;
+    --ik-accent-soft: #2a2a2a;
+    --ik-accent-border: #4a4a4a;
+    --ik-accent-ring: rgba(255, 255, 255, 0.14);
+    --ik-accent-fill: #ffffff;
+    --ik-on-accent: #0d0d0d;
+    --ik-row-active: #2a2a2a;
+    --ik-prompt-bg: #ececec;
+    --ik-prompt-text: #0d0d0d;
+    --ik-btn-bg: #ececec;
+    --ik-btn-text: #0d0d0d;
+    --ik-success-bg: #13301e;
+    --ik-success-text: #8fd4a8;
+    --ik-danger-bg: #3a1414;
+    --ik-danger-border: #6b2424;
+    --ik-danger-text: #ff9b9b;
+    --ik-toast-bg: #ececec;
+    --ik-toast-text: #0d0d0d;
+    --ik-toast-warn: #b45309;
+    --ik-tab-text: #a3a3a3;
+    --ik-tab-hover: rgba(255, 255, 255, 0.07);
+    --ik-tab-accent: #ffffff;
+    --ik-tab-accent-soft: rgba(255, 255, 255, 0.1);
+    --ik-tabbar-border: rgba(255, 255, 255, 0.1);
+    --ik-cursor-bg: rgba(255, 255, 255, 0.08);
+    --ik-cursor-bar: #ffffff;
+    --ik-msg-bar: #ffffff;
+  }
+}
+
+/* ---- Aurora (Gemini-inspired): airy, very round, blue to violet gradient.
+   Google Sans is already loaded on Gmail and Calendar pages; elsewhere the
+   stack falls back to the system UI font. ---- */
+:root[data-inboxkeys-theme="aurora"] {
+  --ik-font: "Google Sans Text", "Google Sans", Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --ik-font-display: "Google Sans Display", "Google Sans", Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ik-font-mono: "Google Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ik-title-weight: 500;
+  --ik-radius: 28px;
+  --ik-radius-md: 14px;
+  --ik-radius-sm: 8px;
+  --ik-radius-btn: 999px;
+  --ik-scrim-blur: 6px;
+
+  --ik-scrim: rgba(32, 33, 36, 0.28);
+  --ik-shadow: 0 12px 40px rgba(31, 31, 31, 0.16), 0 1px 3px rgba(31, 31, 31, 0.08);
+  --ik-page: #f0f4f9;
+  --ik-surface: #ffffff;
+  --ik-surface-raised: #f8fafd;
+  --ik-surface-sunken: #f0f4f9;
+  --ik-fill: #e9eef6;
+  --ik-text: #1f1f1f;
+  --ik-text-muted: #444746;
+  --ik-text-subtle: #747775;
+  --ik-text-kbd: #1f1f1f;
+  --ik-border: #dde3ea;
+  --ik-divider: #e9eef6;
+  --ik-border-strong: #c4c7c5;
+  --ik-accent: #3b6fe0;
+  --ik-accent-soft: #eaf0fd;
+  --ik-accent-border: #c3d4fb;
+  --ik-accent-ring: rgba(59, 111, 224, 0.2);
+  --ik-accent-fill: linear-gradient(90deg, #4f8ef7 0%, #8a6fe0 55%, #d9668a 100%);
+  --ik-on-accent: #ffffff;
+  --ik-row-active: #e6edfb;
+  --ik-prompt-bg: linear-gradient(90deg, #4f8ef7 0%, #8a6fe0 55%, #d9668a 100%);
+  --ik-prompt-text: #ffffff;
+  --ik-btn-bg: linear-gradient(90deg, #4f8ef7 0%, #8a6fe0 100%);
+  --ik-btn-text: #ffffff;
+  --ik-success-bg: #e2f3e7;
+  --ik-success-text: #146c2e;
+  --ik-danger-bg: #fce8e6;
+  --ik-danger-border: #f6c6c1;
+  --ik-danger-text: #b3261e;
+  --ik-toast-bg: #1f1f1f;
+  --ik-toast-text: #ffffff;
+  --ik-toast-warn: #a24b00;
+  --ik-tab-text: #444746;
+  --ik-tab-hover: rgba(68, 71, 70, 0.08);
+  --ik-tab-accent: #3b6fe0;
+  --ik-tab-accent-soft: rgba(59, 111, 224, 0.12);
+  --ik-tabbar-border: rgba(68, 71, 70, 0.14);
+  --ik-cursor-bg: rgba(110, 111, 224, 0.12);
+  --ik-cursor-bar: #7b6fe0;
+  --ik-msg-bar: #7b6fe0;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-inboxkeys-theme="aurora"] {
+    --ik-scrim: rgba(0, 0, 0, 0.5);
+    --ik-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --ik-page: #131314;
+    --ik-surface: #1e1f20;
+    --ik-surface-raised: #1e1f20;
+    --ik-surface-sunken: #131314;
+    --ik-fill: #282a2c;
+    --ik-text: #e3e3e3;
+    --ik-text-muted: #c4c7c5;
+    --ik-text-subtle: #8e918f;
+    --ik-text-kbd: #e3e3e3;
+    --ik-border: #333537;
+    --ik-divider: #2b2d30;
+    --ik-border-strong: #444746;
+    --ik-accent: #8ab0ff;
+    --ik-accent-soft: #28304a;
+    --ik-accent-border: #3b4a75;
+    --ik-accent-ring: rgba(138, 176, 255, 0.24);
+    --ik-accent-fill: linear-gradient(90deg, #5d9bff 0%, #a08aff 55%, #ff7aa2 100%);
+    --ik-on-accent: #ffffff;
+    --ik-row-active: #2a3147;
+    --ik-prompt-bg: linear-gradient(90deg, #5d9bff 0%, #a08aff 55%, #ff7aa2 100%);
+    --ik-prompt-text: #ffffff;
+    --ik-btn-bg: linear-gradient(90deg, #5d9bff 0%, #a08aff 100%);
+    --ik-btn-text: #ffffff;
+    --ik-success-bg: #133a20;
+    --ik-success-text: #a8dab5;
+    --ik-danger-bg: #41201d;
+    --ik-danger-border: #7a2f28;
+    --ik-danger-text: #f2b8b5;
+    --ik-toast-bg: #333537;
+    --ik-toast-text: #e3e3e3;
+    --ik-toast-warn: #a24b00;
+    --ik-tab-text: #c4c7c5;
+    --ik-tab-hover: rgba(227, 227, 227, 0.08);
+    --ik-tab-accent: #8ab0ff;
+    --ik-tab-accent-soft: rgba(138, 176, 255, 0.16);
+    --ik-tabbar-border: rgba(227, 227, 227, 0.12);
+    --ik-cursor-bg: rgba(160, 138, 255, 0.16);
+    --ik-cursor-bar: #a08aff;
+    --ik-msg-bar: #a08aff;
+  }
+}
+
+/* ---- Plush (family.co-inspired): soft, very rounded, chunky keycaps,
+   black pill buttons, one bright blue. ---- */
+:root[data-inboxkeys-theme="plush"] {
+  --ik-font: "SF Pro Rounded", ui-rounded, "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --ik-font-display: "SF Pro Rounded", ui-rounded, "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ik-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ik-title-weight: 700;
+  --ik-radius: 30px;
+  --ik-radius-md: 16px;
+  --ik-radius-sm: 8px;
+  --ik-radius-btn: 999px;
+  --ik-scrim-blur: 8px;
+
+  --ik-scrim: rgba(20, 20, 20, 0.22);
+  --ik-shadow: 0 30px 70px rgba(20, 20, 20, 0.14), 0 2px 0 rgba(20, 20, 20, 0.04);
+  --ik-page: #f6f7f9;
+  --ik-surface: #ffffff;
+  --ik-surface-raised: #fafbfc;
+  --ik-surface-sunken: #f6f7f9;
+  --ik-fill: #f0f2f5;
+  --ik-text: #141414;
+  --ik-text-muted: #6b6f76;
+  --ik-text-subtle: #a0a4ab;
+  --ik-text-kbd: #3c3f44;
+  --ik-border: #ebedf0;
+  --ik-divider: #f0f2f5;
+  --ik-border-strong: #dfe2e6;
+  --ik-accent: #1a88f8;
+  --ik-accent-soft: #e7f2ff;
+  --ik-accent-border: #b9dcff;
+  --ik-accent-ring: rgba(26, 136, 248, 0.18);
+  --ik-accent-fill: #1a88f8;
+  --ik-on-accent: #ffffff;
+  --ik-row-active: #f0f2f5;
+  --ik-prompt-bg: #141414;
+  --ik-prompt-text: #ffffff;
+  --ik-btn-bg: #141414;
+  --ik-btn-text: #ffffff;
+  --ik-success-bg: #e3f8ea;
+  --ik-success-text: #13803d;
+  --ik-danger-bg: #ffe9e9;
+  --ik-danger-border: #ffc9c9;
+  --ik-danger-text: #e0302e;
+  --ik-toast-bg: #141414;
+  --ik-toast-text: #ffffff;
+  --ik-toast-warn: #e0702e;
+  --ik-tab-text: #6b6f76;
+  --ik-tab-hover: rgba(20, 20, 20, 0.05);
+  --ik-tab-accent: #1a88f8;
+  --ik-tab-accent-soft: rgba(26, 136, 248, 0.12);
+  --ik-tabbar-border: rgba(20, 20, 20, 0.08);
+  --ik-cursor-bg: rgba(26, 136, 248, 0.1);
+  --ik-cursor-bar: #1a88f8;
+  --ik-msg-bar: #1a88f8;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-inboxkeys-theme="plush"] {
+    --ik-scrim: rgba(0, 0, 0, 0.45);
+    --ik-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), 0 2px 0 rgba(255, 255, 255, 0.03);
+    --ik-page: #161618;
+    --ik-surface: #1c1c1e;
+    --ik-surface-raised: #232325;
+    --ik-surface-sunken: #161618;
+    --ik-fill: #2c2c2e;
+    --ik-text: #f5f5f7;
+    --ik-text-muted: #a1a1a6;
+    --ik-text-subtle: #6e6e73;
+    --ik-text-kbd: #e5e5ea;
+    --ik-border: #2f2f32;
+    --ik-divider: #2a2a2c;
+    --ik-border-strong: #3a3a3c;
+    --ik-accent: #4aa3ff;
+    --ik-accent-soft: #16304d;
+    --ik-accent-border: #234a75;
+    --ik-accent-ring: rgba(59, 155, 255, 0.26);
+    --ik-accent-fill: #3b9bff;
+    --ik-on-accent: #ffffff;
+    --ik-row-active: #2c2c2e;
+    --ik-prompt-bg: #f5f5f7;
+    --ik-prompt-text: #141414;
+    --ik-btn-bg: #f5f5f7;
+    --ik-btn-text: #141414;
+    --ik-success-bg: #12341f;
+    --ik-success-text: #7ee2a0;
+    --ik-danger-bg: #3d1a1a;
+    --ik-danger-border: #6b2a2a;
+    --ik-danger-text: #ff8a8a;
+    --ik-toast-bg: #f5f5f7;
+    --ik-toast-text: #141414;
+    --ik-toast-warn: #e0702e;
+    --ik-tab-text: #a1a1a6;
+    --ik-tab-hover: rgba(255, 255, 255, 0.06);
+    --ik-tab-accent: #4aa3ff;
+    --ik-tab-accent-soft: rgba(74, 163, 255, 0.16);
+    --ik-tabbar-border: rgba(255, 255, 255, 0.08);
+    --ik-cursor-bg: rgba(74, 163, 255, 0.14);
+    --ik-cursor-bar: #4aa3ff;
+    --ik-msg-bar: #4aa3ff;
+  }
+}

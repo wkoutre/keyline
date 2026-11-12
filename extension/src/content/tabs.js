@@ -285,9 +285,12 @@ window.InboxKeys = window.InboxKeys || {};
     }) || null;
   }
 
+  const PANES = ["tabs", "shortcuts", "appearance"];
+  const paneOf = (p) => (PANES.includes(p) ? p : "tabs");
+
   function openConfig(initialPane = "tabs") {
     if (cfg) {
-      const pane = initialPane === "shortcuts" ? "shortcuts" : "tabs";
+      const pane = paneOf(initialPane);
       const tab = cfg.querySelector(`[data-settings-tab="${pane}"]`);
       if (tab) tab.click();
       else closeConfig();
@@ -296,7 +299,11 @@ window.InboxKeys = window.InboxKeys || {};
     const working = tabs().map((t) => ({ ...t }));
     let workingKeyOverrides = { ...(storage.get("keyOverrides") || {}) };
     let shortcutFilter = "";
-    let activePane = initialPane === "shortcuts" ? "shortcuts" : "tabs";
+    let activePane = paneOf(initialPane);
+    const Theme = InboxKeys.theme;
+    // Clicking a theme card previews it live; Save keeps it, Cancel/Esc puts
+    // the stored theme back (closeConfig re-applies storage.theme).
+    let workingTheme = Theme ? Theme.normalize(storage.get("theme")) : "keyline";
 
     cfg = document.createElement("div");
     cfg.className = "inboxkeys-overlay inboxkeys-overlay--open inboxkeys-cfg-overlay";
@@ -305,13 +312,14 @@ window.InboxKeys = window.InboxKeys || {};
         <div class="inboxkeys-cfg-head">
           <div>
             <div class="inboxkeys-cfg-title">InboxKeys settings</div>
-            <div class="inboxkeys-cfg-sub">Tune your split inbox and keyboard shortcuts without leaving Gmail. Search shortcuts by action, group, or key.</div>
+            <div class="inboxkeys-cfg-sub">Tune your split inbox, keyboard shortcuts and theme without leaving Gmail. Search shortcuts by action, group, or key.</div>
           </div>
           <button class="inboxkeys-cfg-x" aria-label="Close">esc</button>
         </div>
         <div class="inboxkeys-cfg-tabs" role="tablist" aria-label="InboxKeys settings sections">
           <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="tabs">Tabs</button>
           <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="shortcuts">Keyboard shortcuts</button>
+          <button class="inboxkeys-cfg-tab" type="button" role="tab" data-settings-tab="appearance">Appearance</button>
         </div>
         <div class="inboxkeys-cfg-body">
           <section class="inboxkeys-cfg-panel inboxkeys-cfg-panel--tabs" data-settings-panel="tabs">
@@ -346,6 +354,15 @@ window.InboxKeys = window.InboxKeys || {};
             </div>
             <div class="inboxkeys-shortcut-list"></div>
           </section>
+          <section class="inboxkeys-cfg-panel inboxkeys-cfg-panel--appearance" data-settings-panel="appearance">
+            <div class="inboxkeys-cfg-section-head">
+              <div>
+                <div class="inboxkeys-cfg-section-title">Theme</div>
+                <div class="inboxkeys-cfg-section-sub">Restyles the palette, cheat sheet, toasts, tab bar and settings on Gmail and Calendar. Follows your system's light or dark mode, and syncs to your other computers.</div>
+              </div>
+            </div>
+            <div class="inboxkeys-theme-grid" role="radiogroup" aria-label="Theme"></div>
+          </section>
         </div>
         <div class="inboxkeys-cfg-foot">
           <span class="inboxkeys-cfg-hint"></span>
@@ -363,9 +380,10 @@ window.InboxKeys = window.InboxKeys || {};
     const shortcutSearch = cfg.querySelector(".inboxkeys-shortcut-search");
     const shortcutCount = cfg.querySelector(".inboxkeys-shortcut-count");
     const hint = cfg.querySelector(".inboxkeys-cfg-hint");
+    const themeGrid = cfg.querySelector(".inboxkeys-theme-grid");
 
     function setSettingsPane(pane) {
-      activePane = pane === "shortcuts" ? "shortcuts" : "tabs";
+      activePane = paneOf(pane);
       cfg.querySelectorAll("[data-settings-tab]").forEach((tab) => {
         const selected = tab.dataset.settingsTab === activePane;
         tab.classList.toggle("inboxkeys-cfg-tab--active", selected);
@@ -380,7 +398,43 @@ window.InboxKeys = window.InboxKeys || {};
       hint.innerHTML =
         activePane === "shortcuts"
           ? "Tip: shortcut changes save with this modal. Press <code>Esc</code> while recording to cancel."
-          : "Tip: tab changes save with this modal. Use <code>in:inbox</code> for tabs you want to clear with Archive.";
+          : activePane === "appearance"
+            ? "Tip: click a theme to preview it. Save keeps it, Cancel puts the old one back."
+            : "Tip: tab changes save with this modal. Use <code>in:inbox</code> for tabs you want to clear with Archive.";
+    }
+
+    function renderThemes() {
+      if (!themeGrid || !Theme) return;
+      themeGrid.innerHTML = "";
+      Theme.THEMES.forEach((t) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "inboxkeys-theme-card" + (t.id === workingTheme ? " inboxkeys-theme-card--active" : "");
+        card.dataset.theme = t.id;
+        card.setAttribute("role", "radio");
+        card.setAttribute("aria-checked", t.id === workingTheme ? "true" : "false");
+        const [bg, text, accent] = t.swatch;
+        card.innerHTML = `
+          <span class="inboxkeys-theme-preview">
+            <span class="inboxkeys-theme-preview-bar"></span><span class="inboxkeys-theme-preview-dot"></span>
+          </span>
+          <span><span class="inboxkeys-theme-name"></span><span class="inboxkeys-theme-inspired"></span></span>
+          <span class="inboxkeys-theme-note"></span>`;
+        // CSSOM, not a style attribute, so a strict page CSP can't drop it.
+        const preview = card.querySelector(".inboxkeys-theme-preview");
+        preview.style.setProperty("--sw-bg", bg);
+        preview.style.setProperty("--sw-text", text);
+        preview.style.setProperty("--sw-accent", accent);
+        card.querySelector(".inboxkeys-theme-name").textContent = t.name;
+        card.querySelector(".inboxkeys-theme-inspired").textContent = t.inspired ? `${t.inspired}-inspired` : "Default";
+        card.querySelector(".inboxkeys-theme-note").textContent = t.note;
+        card.addEventListener("click", () => {
+          workingTheme = t.id;
+          Theme.apply(t.id);
+          renderThemes();
+        });
+        themeGrid.appendChild(card);
+      });
     }
 
     function rowFor(tab, i) {
@@ -639,6 +693,7 @@ window.InboxKeys = window.InboxKeys || {};
 
     renderRows();
     renderShortcuts();
+    renderThemes();
     setSettingsPane(activePane);
 
     cfg.querySelectorAll("[data-settings-tab]").forEach((tab) => {
@@ -664,7 +719,7 @@ window.InboxKeys = window.InboxKeys || {};
       const cleaned = working
         .map((t) => ({ ...t, name: (t.name || "").trim() }))
         .filter((t) => t.type === "inbox" || (t.name && (t.query || "").trim()));
-      await storage.set({ tabs: cleaned, keyOverrides: workingKeyOverrides });
+      await storage.set({ tabs: cleaned, keyOverrides: workingKeyOverrides, theme: workingTheme });
       closeConfig();
       rebuild();
       InboxKeys.toast("Settings saved");
@@ -689,6 +744,8 @@ window.InboxKeys = window.InboxKeys || {};
     document.removeEventListener("keydown", onCfgKey, true);
     if (cfg) cfg.remove();
     cfg = null;
+    // Drop any unsaved theme preview (after Save, storage already holds it).
+    if (InboxKeys.theme) InboxKeys.theme.apply(storage.get("theme"));
   }
 
   function escapeAttr(s) {

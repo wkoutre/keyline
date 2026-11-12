@@ -86,6 +86,12 @@ window.InboxKeys = window.InboxKeys || {};
     cmds.push({ id: "view-month", title: "Go to month view", kind: "nav", key: "m", run: () => gcal.view("Month") });
     cmds.push({ id: "create", title: "Create event", kind: "nav", key: "c", run: () => gcal.createEvent() });
     cmds.push({ id: "shortcuts", title: "Show keyboard shortcuts", kind: "nav", key: "?", run: showShortcuts });
+    const T = InboxKeys.theme;
+    if (T) {
+      for (const t of T.THEMES) {
+        cmds.push({ id: "theme:" + t.id, title: "Theme: " + T.label(t.id), kind: "theme", run: () => T.set(t.id, storage) });
+      }
+    }
     return cmds;
   }
 
@@ -172,27 +178,28 @@ window.InboxKeys = window.InboxKeys || {};
   function ensureStyles() {
     if (document.getElementById(PREFIX + "-style")) return;
     const css = `
-      .${PREFIX}-overlay{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.4)}
-      .${PREFIX}-panel{margin-top:12vh;width:560px;max-width:92vw;background:#1f1f24;color:#f2f2f4;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
-      .${PREFIX}-search{width:100%;box-sizing:border-box;padding:16px 18px;font-size:16px;border:0;outline:0;background:#2a2a31;color:#fff}
-      .${PREFIX}-list{max-height:50vh;overflow:auto;margin:0;padding:6px 0;list-style:none}
-      .${PREFIX}-item{padding:10px 18px;font-size:14px;cursor:pointer;display:flex;gap:10px;align-items:center}
-      .${PREFIX}-item.${PREFIX}-active{background:#3a3a45}
-      .${PREFIX}-badge{font-size:11px;color:#a6a6ad;border:1px solid #4a4a55;border-radius:6px;padding:1px 6px;margin-left:auto}
-      .${PREFIX}-kbd{margin-left:auto;font:11px ui-monospace,Menlo,Consolas,monospace;color:#cfcfd6;background:#17171b;border:1px solid #4a4a55;border-radius:5px;padding:2px 8px;min-width:12px;text-align:center;text-transform:uppercase}
-      .${PREFIX}-hint{padding:8px 18px;font-size:12px;color:#a6a6ad}
-      .${PREFIX}-title{padding:16px 18px 4px;font-size:15px;color:#f2f2f4;font-weight:600}
-      .${PREFIX}-steps{margin:4px 0 6px;padding:0 18px 0 36px;color:#cfcfd6;font-size:13px;line-height:1.65}
+      .${PREFIX}-overlay{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:flex-start;justify-content:center;background:var(--ik-scrim);backdrop-filter:blur(var(--ik-scrim-blur))}
+      .${PREFIX}-panel{margin-top:12vh;width:560px;max-width:92vw;background:var(--ik-surface);color:var(--ik-text);border-radius:var(--ik-radius);box-shadow:var(--ik-shadow);overflow:hidden;font-family:var(--ik-font)}
+      .${PREFIX}-search{width:100%;box-sizing:border-box;padding:16px 18px;font-size:16px;font-family:var(--ik-font-display);border:0;border-bottom:1px solid var(--ik-divider);outline:0;background:var(--ik-surface-sunken);color:var(--ik-text)}
+      .${PREFIX}-search::placeholder{color:var(--ik-text-subtle)}
+      .${PREFIX}-list{max-height:50vh;overflow:auto;margin:0;padding:6px;list-style:none}
+      .${PREFIX}-item{padding:10px 12px;font-size:14px;cursor:pointer;display:flex;gap:10px;align-items:center;border-radius:var(--ik-radius-md)}
+      .${PREFIX}-item.${PREFIX}-active{background:var(--ik-row-active)}
+      .${PREFIX}-badge{font-size:11px;color:var(--ik-text-muted);border:1px solid var(--ik-border-strong);border-radius:6px;padding:1px 6px;margin-left:auto}
+      .${PREFIX}-kbd{margin-left:auto;font:11px var(--ik-font-mono);color:var(--ik-text-kbd);background:var(--ik-fill);border:1px solid var(--ik-border);border-bottom-width:2px;border-radius:var(--ik-radius-sm);padding:2px 8px;min-width:12px;text-align:center;text-transform:uppercase}
+      .${PREFIX}-hint{padding:8px 18px;font-size:12px;color:var(--ik-text-subtle)}
+      .${PREFIX}-title{padding:16px 18px 4px;font-size:15px;color:var(--ik-text);font-weight:var(--ik-title-weight);font-family:var(--ik-font-display)}
+      .${PREFIX}-steps{margin:4px 0 6px;padding:0 18px 0 36px;color:var(--ik-text-kbd);font-size:13px;line-height:1.65}
       .${PREFIX}-steps li{margin:3px 0}
-      .${PREFIX}-note{padding:4px 18px 12px;font-size:12px;color:#a6a6ad;line-height:1.5}
-      .${PREFIX}-lead{padding:2px 18px 10px;font-size:13px;color:#d7d7de;line-height:1.55}
+      .${PREFIX}-note{padding:4px 18px 12px;font-size:12px;color:var(--ik-text-muted);line-height:1.5}
+      .${PREFIX}-lead{padding:2px 18px 10px;font-size:13px;color:var(--ik-text-kbd);line-height:1.55}
       .${PREFIX}-btnrow{display:flex;gap:8px;justify-content:flex-end;padding:6px 16px 16px}
-      .${PREFIX}-btnrow button{cursor:pointer;border:0;border-radius:7px;padding:7px 12px;font-size:13px}
-      .${PREFIX}-nudge{position:fixed;left:16px;bottom:16px;z-index:2147483500;background:#1f1f24;color:#f2f2f4;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);padding:10px 12px;font:13px -apple-system,'Helvetica Neue',Arial,sans-serif;display:flex;gap:10px;align-items:center}
-      .${PREFIX}-nudge b{color:#7C7FF6}
-      .${PREFIX}-nudge button{cursor:pointer;border:0;border-radius:7px;padding:6px 10px;font-size:13px}
-      .${PREFIX}-add{background:#7C7FF6;color:#fff}
-      .${PREFIX}-x{background:transparent;color:#a6a6ad}
+      .${PREFIX}-btnrow button{cursor:pointer;border:0;border-radius:var(--ik-radius-btn);padding:7px 12px;font-size:13px}
+      .${PREFIX}-nudge{position:fixed;left:16px;bottom:16px;z-index:2147483500;background:var(--ik-surface);color:var(--ik-text);border:1px solid var(--ik-border);border-radius:var(--ik-radius-md);box-shadow:var(--ik-shadow);padding:10px 12px;font:13px var(--ik-font);display:flex;gap:10px;align-items:center}
+      .${PREFIX}-nudge b{color:var(--ik-accent)}
+      .${PREFIX}-nudge button{cursor:pointer;border:0;border-radius:var(--ik-radius-btn);padding:6px 10px;font-size:13px}
+      .${PREFIX}-add{background:var(--ik-btn-bg);color:var(--ik-btn-text)}
+      .${PREFIX}-x{background:transparent;color:var(--ik-text-muted)}
     `;
     const style = document.createElement("style");
     style.id = PREFIX + "-style";
@@ -664,6 +671,7 @@ window.InboxKeys = window.InboxKeys || {};
   }
 
   function init() {
+    if (InboxKeys.theme) InboxKeys.theme.init(storage);
     document.addEventListener("keydown", onKeydown, true);
     // The rail renders a beat after the grid; wait for it, then nudge + learn.
     gcal.waitFor(
