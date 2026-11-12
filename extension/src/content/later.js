@@ -11,9 +11,15 @@ window.InboxKeys = window.InboxKeys || {};
 (function () {
   const WHEN = window.InboxKeys_WHEN;
 
+  const PROMPTS = {
+    send: ["Send at", "Schedule send: pick or type a time (fri 3pm)…"],
+    snooze: ["Snooze", "Snooze until: pick or type a time (fri 3pm)…"],
+    followup: ["Remind me", "If no reply by: pick or type days or a time (3, fri, dec 3)…"],
+  };
+
   function rowsFor(kind, act) {
     const now = new Date();
-    const group = kind === "send" ? "Schedule send" : "Snooze until";
+    const group = kind === "send" ? "Schedule send" : kind === "followup" ? "Remind me if no reply" : "Snooze until";
     return WHEN.presets(now, kind).map((p) => ({
       id: "later-" + p.id,
       title: p.title,
@@ -28,7 +34,9 @@ window.InboxKeys = window.InboxKeys || {};
     const query = String(q || "").trim();
     if (!query) return [];
     const now = new Date();
-    const when = WHEN.parse(query, now);
+    // In the follow-up picker a bare number means days ("3" = in 3 days),
+    // not 3 PM: reminders are counted in days.
+    const when = WHEN.parse(kind === "followup" && /^\d{1,3}$/.test(query) ? query + "d" : query, now);
     if (!when) {
       // A query that names a preset ("mon", "later") is still being filtered;
       // only say "can't read" when nothing else matches either.
@@ -46,7 +54,7 @@ window.InboxKeys = window.InboxKeys || {};
     return [
       {
         id: "later-typed",
-        title: (kind === "send" ? "Send " : "Snooze until ") + WHEN.label(when, now),
+        title: (kind === "send" ? "Send " : kind === "followup" ? "Remind me " : "Snooze until ") + WHEN.label(when, now),
         group: "Typed time",
         hint: query,
         run: () => act(when),
@@ -58,8 +66,8 @@ window.InboxKeys = window.InboxKeys || {};
     const items = [...rowsFor(kind, act), nativeRow];
     InboxKeys.palette.choose({
       items,
-      prompt: kind === "send" ? "Send at" : "Snooze",
-      placeholder: kind === "send" ? "Schedule send: pick or type a time (fri 3pm)…" : "Snooze until: pick or type a time (fri 3pm)…",
+      prompt: PROMPTS[kind][0],
+      placeholder: PROMPTS[kind][1],
       dynamic: (q) => {
         const rows = typedRow(kind, q, act);
         // Hide the "can't read" row while the text still fuzzy-matches a preset.
@@ -93,6 +101,26 @@ window.InboxKeys = window.InboxKeys || {};
     );
   }
 
+  // Shift+H: "remind me if no reply". Snoozes the conversation (cursor row in
+  // the list, or the open one) until the picked day. Gmail itself brings a
+  // snoozed conversation back to the inbox the moment a new message arrives
+  // in it, so the reminder only surfaces on its own when nobody replied: no
+  // server, no polling, no new permission. Typically pressed right after
+  // sending, from the conversation or from Sent.
+  function remindNoReply(opener) {
+    return open(
+      "followup",
+      (when) => opener(() => InboxKeys.gmail.snoozeUntil(when, "If no reply, back in your inbox")),
+      {
+        id: "later-native-followup",
+        title: "Open Gmail's snooze menu",
+        group: "Gmail",
+        searchText: "native custom other",
+        run: () => opener(null),
+      }
+    );
+  }
+
   // Mod+Shift+Enter in compose. Remember which draft was focused BEFORE the
   // picker takes focus, so a second open compose window can't be scheduled
   // by mistake.
@@ -116,5 +144,5 @@ window.InboxKeys = window.InboxKeys || {};
     );
   }
 
-  InboxKeys.later = { snooze, scheduleSend, _rowsFor: rowsFor, _typedRow: typedRow };
+  InboxKeys.later = { snooze, remindNoReply, scheduleSend, _rowsFor: rowsFor, _typedRow: typedRow };
 })();

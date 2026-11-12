@@ -91,6 +91,20 @@ assert.equal(p("m"), null, "a single letter is not a weekday");
   for (const x of ps) assert.ok(x.when > NOW, "every preset is in the future: " + x.id);
 }
 
+// ---- follow-up ("remind me if no reply") presets: whole days at 8 AM ----
+{
+  const fu = presets(NOW, "followup");
+  assert.deepEqual(fu.map((x) => x.id), ["followup-1d", "followup-2d", "followup-3d", "followup-1w"]);
+  const at8 = (days) => {
+    const x = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate() + days, 8, 0, 0, 0);
+    return x.getTime();
+  };
+  assert.deepEqual(fu.map((x) => x.when.getTime()), [at8(1), at8(2), at8(3), at8(7)]);
+  // Late at night the 1-day reminder is still tomorrow, not "in 24 hours".
+  const night = presets(new Date(2026, 10, 11, 23, 50), "followup")[0];
+  assert.equal(night.when.getTime(), d(2026, 10, 12, 8));
+}
+
 // ---- formatting ----
 assert.equal(label(new Date(2026, 10, 13, 15, 0), NOW), "Fri, Nov 13, 3:00 PM");
 assert.equal(label(new Date(2027, 0, 5, 8, 5), NOW), "Tue, Jan 5 2027, 8:05 AM");
