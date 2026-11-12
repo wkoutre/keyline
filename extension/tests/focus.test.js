@@ -81,6 +81,7 @@ const pill = (w) => w.document.getElementById("keyline-focus-pill");
     pill(w).click();
     assert.equal(on(w), false, "pill click exits");
     assert.equal(pill(w), null, "pill removed");
+    assert.deepEqual(w.__toasts, ["Focus mode on", "Focus mode off"], "pill exit toasts like the key");
     assert.deepEqual(hidden(w), [], "panes unmarked on exit");
     assert.ok(w.__set.some((p) => p.focusMode === false), "off persisted");
   }
@@ -119,6 +120,19 @@ const pill = (w) => w.document.getElementById("keyline-focus-pill");
     const w = await load(LIST, "#inbox", { focusMode: true });
     assert.equal(on(w), true, "restored from storage");
     assert.ok(pill(w), "pill restored");
+  }
+
+  // Reload with focus saved on: init runs before Gmail renders role=main. The
+  // panes must still get marked once the layout appears (live bug: the folder
+  // pane came back after a reload until the next navigation).
+  {
+    const w = await load('<div id="app"></div>', "#inbox", { focusMode: true });
+    assert.equal(on(w), true);
+    assert.deepEqual(hidden(w), [], "nothing to mark yet");
+    w.document.getElementById("app").innerHTML = LIST;
+    await tick(150);
+    assert.deepEqual(hidden(w), ["folders", "overlay", "rail", "side"], "late layout is marked");
+    w.InboxKeys.focus.set(false);
   }
 
   // A change from another tab applies live.

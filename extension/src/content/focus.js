@@ -60,7 +60,7 @@ window.InboxKeys = window.InboxKeys || {};
       pill.id = PILL_ID;
       pill.type = "button";
       pill.className = "keyline-focus-pill";
-      pill.addEventListener("click", () => set(false));
+      pill.addEventListener("click", () => { if (isOn()) toggle(); });
       document.body.appendChild(pill);
     }
     const key = exitKeyLabel();
@@ -102,14 +102,31 @@ window.InboxKeys = window.InboxKeys || {};
     for (const el of document.querySelectorAll("[" + HIDE + "]")) el.removeAttribute(HIDE);
   }
 
+  // While focus is on, keep an observer on the row so a re-rendered pane is
+  // re-marked. Before Gmail has rendered the row (focus restored on a reload
+  // runs before role=main exists), watch the body instead, throttled, until the
+  // row appears; then swap to the cheap row-only observer.
+  let pending = false;
   function watch(row) {
-    if (row === observedRow) return;
+    const target = row || (isOn() ? document.body : null);
+    if (target === observedRow) return;
     if (observer) observer.disconnect();
     observer = null;
-    observedRow = row;
-    if (row && typeof MutationObserver === "function") {
+    observedRow = target;
+    if (!target || typeof MutationObserver !== "function") return;
+    if (row) {
       observer = new MutationObserver(() => { if (isOn()) mark(); });
       observer.observe(row, { childList: true });
+    } else {
+      observer = new MutationObserver(() => {
+        if (pending) return;
+        pending = true;
+        setTimeout(() => {
+          pending = false;
+          if (isOn()) mark();
+        }, 100);
+      });
+      observer.observe(target, { childList: true, subtree: true });
     }
   }
 
