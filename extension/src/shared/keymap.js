@@ -20,6 +20,7 @@
     { id: "open-link-or-attachment", title: "Open link or attachment", group: "Compose", defaultKeys: ["Mod+O"], contexts: ["threadView"], fixed: true },
     { id: "attach-file", title: "Attach file", group: "Compose", defaultKeys: ["Mod+U"], contexts: ["compose"], fixed: true },
     { id: "schedule-send", title: "Schedule send…", group: "Compose", defaultKeys: ["Mod+Shift+Enter"], contexts: ["compose", "threadView"], fixed: true },
+    { id: "undo-send", title: "Undo send", group: "Compose", defaultKeys: ["Mod+Z"], contexts: ["inboxList", "threadView", "compose", "unknown"], fixed: true },
     { id: "discard-draft", title: "Discard draft", group: "Compose", defaultKeys: ["Mod+Shift+D"], contexts: ["compose", "threadView"], fixed: true },
 
     // Triage

@@ -9,6 +9,7 @@
   if (InboxKeys.theme) InboxKeys.theme.init(storage);
 
   hotkeys.install();
+  if (InboxKeys.undoSend) InboxKeys.undoSend.start();
   tabs.init();
 
   // Learn the current account, and re-check as Gmail re-renders / navigates.
