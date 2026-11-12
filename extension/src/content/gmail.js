@@ -511,17 +511,31 @@ window.InboxKeys = window.InboxKeys || {};
   // window has closed. The id is the fast path; the fallback is any visible
   // Undo control outside a toolbar whose snackbar says the message was sent,
   // so the Undo of an archive or a delete never counts.
+  // True when el sits in a snackbar that is about a SEND. Gmail reuses
+  // span#link_undo for other snackbars ("Draft discarded. Undo" verified live
+  // Nov 2026), so the id alone never proves it is an undo send.
+  function inSendSnackbar(el) {
+    for (let box = el && el.parentElement, i = 0; box && i < 5; box = box.parentElement, i++) {
+      const text = (box.textContent || "").trim().replace(/\s+/g, " ");
+      if (SEL.sendSnackbarText.test(text)) return true;
+    }
+    return false;
+  }
+
+  // Fast path, cheap enough to poll: the visible span#link_undo of a send
+  // snackbar. Its text is "Cancel" while Gmail says "Sending...", then "Undo".
+  function sendUndoLink() {
+    const el = document.querySelector(SEL.sendUndo);
+    return el && isVisible(el) && /^(Undo|Cancel)$/i.test(controlLabel(el)) && inSendSnackbar(el) ? el : null;
+  }
+
   function sendUndoControl() {
-    const byId = document.querySelector(SEL.sendUndo);
-    if (byId && isVisible(byId)) return byId;
+    const byId = sendUndoLink();
+    if (byId) return byId;
     return (
       visibleControls(document).find((el) => {
         if (!/^Undo$/i.test(controlLabel(el)) || (el.closest && el.closest(SEL.toolbars))) return false;
-        for (let box = el.parentElement, i = 0; box && i < 4; box = box.parentElement, i++) {
-          const text = (box.textContent || "").trim().replace(/\s+/g, " ");
-          if (SEL.sendSnackbarText.test(text)) return true;
-        }
-        return false;
+        return inSendSnackbar(el);
       }) || null
     );
   }
@@ -1836,6 +1850,7 @@ window.InboxKeys = window.InboxKeys || {};
     undo,
     undoSend,
     sendUndoControl,
+    sendUndoLink,
     undoSendSelect,
     undoSendSelectSeconds,
     setSelectSeconds,

@@ -141,9 +141,15 @@ function countClicks(w, el) {
     assert.equal(clicks.n, 1, "chip click clicks Gmail's Undo");
     assert.equal(chip(), null, "and closes");
 
-    // Gmail drops the Undo: chip goes too.
+    // Gmail keeps its Undo link up after the click: no fresh chip for it.
     U.tick(5000);
-    assert.ok(chip(), "re-shown while the snackbar is still up");
+    assert.equal(chip(), null, "a spent snackbar never gets a second chip");
+    w.document.querySelector(".vh").remove();
+    U.tick(5100);
+    w.document.body.insertAdjacentHTML("beforeend", SENT_SNACKBAR);
+    U.tick(5200);
+    assert.ok(chip(), "a new send gets a new chip");
+    // Gmail drops the Undo: chip goes too.
     w.document.querySelector(".vh").remove();
     U.tick(5250);
     assert.equal(chip(), null, "chip closes with the snackbar");
@@ -154,7 +160,53 @@ function countClicks(w, el) {
     assert.ok(chip());
     U.tick(20001);
     assert.equal(chip(), null, "chip closes when the window is over");
+    // Live: Gmail kept #link_undo up ~17 s past a 20 s window, and the chip
+    // used to restart at 20s. It must stay closed until the link goes.
+    U.tick(20300);
+    U.tick(30000);
+    assert.equal(chip(), null, "no restart while Gmail's link lingers");
+    w.document.querySelector(".vh").remove();
+    U.tick(31000);
+    w.document.body.insertAdjacentHTML("beforeend", SENT_SNACKBAR);
+    U.tick(32000);
+    assert.match(chip().textContent, / · 10s$/, "next send counts from the top");
     U.hideChip();
+  }
+
+  // ---- Gmail reuses #link_undo: only a SEND snackbar counts -----------------
+  {
+    // Verified live: "Draft discarded. Undo" uses the same span#link_undo.
+    const DISCARD = `<div class="b8 UC bAp" role="alert" aria-live="assertive"><div class="J-J5-Ji"><div class="vh"><span class="aT"><span class="bAq">Draft discarded.</span><span class="bAo"><span id="link_undo" class="ag a8k" role="alert">Undo</span></span></span></div></div></div>`;
+    const w = load(LIST + DISCARD);
+    w.InboxKeys.undoSend.rememberWindow(20);
+    w.InboxKeys.undoSend.tick(0);
+    assert.equal(w.document.querySelector(".inboxkeys-undosend"), null, "no send chip after a discard");
+    const clicks = countClicks(w, w.document.getElementById("link_undo"));
+    press(w, "z", { metaKey: true });
+    assert.equal(clicks.n, 0, "Cmd+Z never un-discards a draft");
+    assert.ok(w.__toasts.some((t) => /undo window has closed/i.test(t)));
+  }
+  {
+    // Phase 1 live: "Sending..." with the link reading "Cancel"; it still counts.
+    const SENDING = `<div class="b8 UC bAp" role="alert" aria-live="assertive"><div class="J-J5-Ji"><div class="vh"><span class="aT"><span class="bAq">Sending...</span><span class="bAo"><span id="link_undo" class="ag a8k" role="alert">Cancel</span></span></span></div></div></div>`;
+    const w = load(LIST + SENDING);
+    w.InboxKeys.undoSend.tick(0);
+    assert.ok(w.document.querySelector(".inboxkeys-undosend"), "chip from the first moment");
+    const clicks = countClicks(w, w.document.getElementById("link_undo"));
+    press(w, "z", { metaKey: true });
+    assert.equal(clicks.n, 1, "Cmd+Z cancels while sending");
+    w.InboxKeys.undoSend.hideChip();
+  }
+
+  // ---- the save toast survives Gmail's reload ----------------------------------
+  {
+    const w = load(LIST);
+    w.sessionStorage.setItem("keyline:undoSendSaved", "20");
+    w.InboxKeys.undoSend.showNote();
+    assert.ok(w.__toasts.some((t) => /set to 20 seconds/.test(t)), "toast after the reload");
+    assert.equal(w.sessionStorage.getItem("keyline:undoSendSaved"), null, "one-shot");
+    w.InboxKeys.undoSend.showNote();
+    assert.equal(w.__toasts.filter((t) => /set to 20/.test(t)).length, 1);
   }
 
   // ---- unknown window: chip without a number; disabled: no chip ---------------
@@ -206,6 +258,7 @@ function countClicks(w, el) {
     assert.equal(saves.n, 1, "clicked Save Changes");
     assert.equal(w.InboxKeys.undoSend.windowSeconds(), 30, "remembered for the countdown");
     assert.ok(w.__toasts.some((t) => /set to 30 seconds/.test(t)));
+    assert.equal(w.sessionStorage.getItem("keyline:undoSendSaved"), "30", "note left for after Gmail's reload");
     // Now marked current in the palette.
     const cur = w.InboxKeys.commands.all().find((c) => c.id === "undo-send-window:30");
     assert.equal(cur.hint, "current");

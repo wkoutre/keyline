@@ -17,6 +17,11 @@ window.InboxKeys = window.InboxKeys || {};
   const POLL_MS = 250;
 
   let chip = null; // { el, start } while Gmail's send Undo is showing
+  // Set when the chip closed (window over, or clicked) while Gmail's Undo link
+  // was still up: Gmail keeps that link visible well past the window (a 20 s
+  // window showed it for ~37 s live), so don't start a fresh chip until the
+  // link has gone away.
+  let spent = false;
   let learnedVisit = false; // read the settings select once per settings visit
   let timer = null;
 
@@ -62,6 +67,7 @@ window.InboxKeys = window.InboxKeys || {};
     el.addEventListener("click", () => {
       gmail.undoSend();
       hideChip();
+      spent = true;
     });
     document.documentElement.appendChild(el);
     chip = { el, start: now };
@@ -82,14 +88,18 @@ window.InboxKeys = window.InboxKeys || {};
       hideChip();
       return;
     }
-    const undo = document.querySelector(gmail.SEL.sendUndo);
-    const open = !!(undo && gmail.isVisible(undo));
-    if (open && !chip) showChip(now);
-    else if (!open && chip) hideChip();
-    else if (chip) {
+    const open = !!gmail.sendUndoLink();
+    if (!open) {
+      spent = false;
+      hideChip();
+    } else if (!chip) {
+      if (!spent) showChip(now);
+    } else {
       const secs = windowSeconds();
-      if (secs && now - chip.start >= secs * 1000) hideChip();
-      else chip.el.textContent = chipText(now);
+      if (secs && now - chip.start >= secs * 1000) {
+        hideChip();
+        spent = true;
+      } else chip.el.textContent = chipText(now);
     }
 
     if (/^#settings\/general\b/.test(location.hash || "")) {
@@ -106,14 +116,34 @@ window.InboxKeys = window.InboxKeys || {};
     }
   }
 
+  // Gmail reloads the page right after Save Changes (live: ~340 ms after our
+  // click), which wipes any toast. Leave a one-shot note in sessionStorage
+  // (survives the reload, this tab only) and show it once the page is back.
+  const NOTE_KEY = "keyline:undoSendSaved";
+  function leaveNote(seconds) {
+    try {
+      sessionStorage.setItem(NOTE_KEY, String(seconds));
+    } catch (_) {}
+  }
+  function showNote() {
+    let n = null;
+    try {
+      n = sessionStorage.getItem(NOTE_KEY);
+      sessionStorage.removeItem(NOTE_KEY);
+    } catch (_) {}
+    if (n && InboxKeys.toast) InboxKeys.toast(`Undo send window set to ${n} seconds`, { kind: "info" });
+  }
+
   function start() {
+    showNote();
     if (timer) return;
     timer = setInterval(() => tick(), POLL_MS);
   }
 
   // Change Gmail's own Undo Send setting: Settings > General, pick the value,
-  // Save Changes. Gmail then returns to the mail view by itself; if it stays on
-  // settings we go back to where the user was.
+  // Save Changes. Gmail then reloads into the mail view by itself (verified
+  // live Nov 2026); if it ever stays on settings we go back to where the user
+  // was. The confirmation toast is re-shown after that reload (leaveNote).
   function setWindow(seconds) {
     if (!gmail.UNDO_SEND_CHOICES.includes(seconds)) return false;
     const prev = location.hash || "#inbox";
@@ -135,6 +165,7 @@ window.InboxKeys = window.InboxKeys || {};
           gmail.settingsSaveButton,
           (btn) => {
             rememberWindow(seconds);
+            leaveNote(seconds);
             gmail.realClick(btn);
             toast(`Undo send window set to ${seconds} seconds`);
             setTimeout(() => {
@@ -153,5 +184,5 @@ window.InboxKeys = window.InboxKeys || {};
     return true;
   }
 
-  InboxKeys.undoSend = { tick, start, setWindow, windowSeconds, rememberWindow, hideChip };
+  InboxKeys.undoSend = { tick, start, showNote, setWindow, windowSeconds, rememberWindow, hideChip };
 })();
