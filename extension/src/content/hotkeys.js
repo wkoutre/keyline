@@ -239,6 +239,11 @@ window.InboxKeys = window.InboxKeys || {};
     return false;
   }
 
+  // Keyline's own settings modals (tabs.openConfig, accounts.openConfig).
+  function keylineModalOpen() {
+    return !!document.querySelector(".inboxkeys-cfg-overlay");
+  }
+
   function onKeydown(e) {
     if (!storage.get("enabled")) return;
 
@@ -284,6 +289,28 @@ window.InboxKeys = window.InboxKeys || {};
         consume(e);
         return;
       }
+      // Any other unmodified key that is NOT aimed at the palette's own input
+      // (typed in the instant before focus lands, or after focus drifted) is
+      // swallowed and fed to the filter. Letting it through handed it to
+      // Gmail's native shortcuts as a trusted keystroke: "f", "c", "u", "s"
+      // forwarded, composed, left and starred the thread behind the palette.
+      if (!e.metaKey && !e.ctrlKey && !palette.ownsTarget(e.target)) {
+        consume(e);
+        palette.typeKey(e);
+      }
+      return;
+    }
+
+    // A Keyline settings modal (Configure tabs / accounts) is up. Its own
+    // listeners handle Escape and shortcut recording, and its fields take
+    // typing, but nothing may reach the mail behind it: neither our hotkeys
+    // (an "e" on a focused settings button archived the cursor row) nor
+    // Gmail's native shortcuts. stopPropagation (not stopImmediate) keeps the
+    // modal's own document-level listeners running; no preventDefault, so
+    // Tab, Enter and Space still work on its buttons.
+    if (keylineModalOpen()) {
+      if (isEditable(e.target) || e.key === "Escape" || e.metaKey || e.ctrlKey) return;
+      e.stopPropagation();
       return;
     }
     if (!storage.get("hotkeysEnabled")) return;

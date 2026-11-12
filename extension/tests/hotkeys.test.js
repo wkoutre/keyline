@@ -1436,6 +1436,86 @@ function wireInlineActions(w, opts = {}) {
   assert.equal(w.InboxKeys.palette.isOpen(), false, "Escape closes the palette");
 }
 
+// Regression (live, Nov 2026): keys typed right after Cmd+K, before the palette
+// input had focus, fell through as trusted keystrokes to Gmail's own shortcuts
+// ("f", "c", "u", "s" forwarded, composed, left and starred a real thread). From
+// the moment the palette opens, a key aimed anywhere but its input is swallowed
+// and fed to the filter instead.
+{
+  const w = load(listFixture(), "#inbox");
+  wireList(w);
+  press(w, "j", { target: w.document.body });
+  let gmailSaw = [];
+  w.document.body.addEventListener("keydown", (e) => gmailSaw.push(e.key)); // stands in for Gmail's own handler
+
+  press(w, "k", { target: w.document.body, metaKey: true });
+  const input = w.document.querySelector(".inboxkeys-input");
+  assert.equal(w.document.activeElement, input, "the palette input has focus as soon as Cmd+K returns");
+
+  // Keys still aimed at the page (stale target, as in the live race).
+  const keys = ["e", "f", "c"].map((k) => press(w, k, { target: w.document.body }));
+  assert.ok(keys.every((ev) => ev.defaultPrevented), "keys typed before focus lands are claimed");
+  assert.deepEqual(gmailSaw, [], "none of them reach Gmail's handlers");
+  assert.equal(w.__archivedRow, undefined, "e did not archive the row behind the palette");
+  assert.equal(input.value, "efc", "they are typed into the palette filter instead");
+  press(w, "Backspace", { target: w.document.body });
+  assert.equal(input.value, "ef", "Backspace aimed at the page edits the filter");
+  assert.equal(w.InboxKeys.palette.isOpen(), true, "the palette stays open");
+
+  // Keys typed into the input itself are left to the input as before.
+  const own = press(w, "x", { target: input });
+  assert.equal(own.defaultPrevented, false, "typing into the palette input is not claimed");
+
+  // Cmd chords still pass to the browser (copy/paste in the filter).
+  const copy = press(w, "c", { target: w.document.body, metaKey: true });
+  assert.equal(copy.defaultPrevented, false, "Cmd+C is not swallowed");
+  press(w, "Escape", { target: w.document.body });
+  assert.equal(w.InboxKeys.palette.isOpen(), false, "Escape still closes it");
+}
+
+// Same race for the one-shot pickers that reuse the palette (snooze, forward,
+// open link): a key aimed at the page while a picker is up filters the picker.
+{
+  const w = load(listFixture(), "#inbox");
+  wireList(w);
+  press(w, "j", { target: w.document.body });
+  w.InboxKeys.palette.choose({ items: [{ title: "Tomorrow", run() {} }, { title: "Next week", run() {} }] });
+  const ev = press(w, "e", { target: w.document.body });
+  assert.equal(ev.defaultPrevented, true, "the key is claimed while the picker is open");
+  assert.equal(w.__archivedRow, undefined, "e did not archive behind the picker");
+  assert.equal(w.document.querySelector(".inboxkeys-input").value, "e", "it filters the picker");
+  w.InboxKeys.palette.hide();
+}
+
+// Keyline's own settings modals must not let keys reach the mail behind them:
+// with focus on a settings button, "e" used to archive the cursor row.
+for (const open of [(w) => w.InboxKeys.tabs.openConfig(), (w) => w.InboxKeys.accounts.openConfig()]) {
+  const w = load(listFixture(), "#inbox");
+  wireList(w);
+  press(w, "j", { target: w.document.body });
+  let gmailSaw = [];
+  w.document.body.addEventListener("keydown", (e) => gmailSaw.push(e.key));
+  const cursorBefore = rows(w).findIndex((r) => r.classList.contains("inboxkeys-cursor"));
+  open(w);
+  const btn = w.document.querySelector(".inboxkeys-cfg button");
+  btn.focus();
+  press(w, "e", { target: btn });
+  press(w, "j", { target: btn });
+  assert.equal(w.__archivedRow, undefined, "e did not archive behind the settings modal");
+  assert.equal(rows(w).findIndex((r) => r.classList.contains("inboxkeys-cursor")), cursorBefore, "j did not move the list cursor behind it");
+  assert.deepEqual(gmailSaw, [], "Gmail's handlers did not see the keys");
+  // Fields in the modal still take typing.
+  const field = w.document.querySelector(".inboxkeys-cfg input");
+  if (field) {
+    field.focus();
+    const typed = press(w, "e", { target: field });
+    assert.equal(typed.defaultPrevented, false, "typing into a settings field is untouched");
+  }
+  // Escape still reaches the modal's own handler and closes it.
+  press(w, "Escape", { target: btn });
+  assert.equal(w.document.querySelector(".inboxkeys-cfg"), null, "Escape closes the settings modal");
+}
+
 // # trashes the focused list row, including the shifted punctuation form most
 // keyboards produce.
 {

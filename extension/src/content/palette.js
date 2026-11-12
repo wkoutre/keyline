@@ -235,7 +235,33 @@ window.InboxKeys = window.InboxKeys || {};
     root.querySelector(".inboxkeys-prompt").textContent = promptLabel;
     input.value = "";
     render();
-    setTimeout(() => input.focus(), 0);
+    // Focus NOW, not on a later tick: keys typed right after Cmd+K used to
+    // land on whatever Gmail had focused and fire Gmail's own shortcuts (a
+    // fast "fwd" forwarded the thread). The deferred focus stays as a backup
+    // in case the page moves focus during this same event.
+    input.focus();
+    setTimeout(() => {
+      if (open && document.activeElement !== input) input.focus();
+    }, 0);
+  }
+
+  // True when a keydown came from the palette's own filter field.
+  function ownsTarget(target) {
+    return !!input && target === input;
+  }
+
+  // A key that reached the page while the palette is open but its input did
+  // not have focus (typed before focus landed, or focus drifted). The engine
+  // swallows it and hands it here, so it filters the palette instead of
+  // reaching Gmail. Printable characters append, Backspace deletes.
+  function typeKey(e) {
+    if (!open || !input) return;
+    if (document.activeElement !== input) input.focus();
+    const k = e && e.key;
+    if (typeof k === "string" && k.length === 1) input.value += k;
+    else if (k === "Backspace") input.value = input.value.slice(0, -1);
+    else return;
+    render();
   }
 
   function show() {
@@ -276,5 +302,5 @@ window.InboxKeys = window.InboxKeys || {};
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  InboxKeys.palette = { show, hide, toggle, choose, isOpen: () => open, move, confirm, current: () => items.slice() };
+  InboxKeys.palette = { show, hide, toggle, choose, isOpen: () => open, ownsTarget, typeKey, move, confirm, current: () => items.slice() };
 })();

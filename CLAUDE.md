@@ -117,6 +117,10 @@ The engine uses a capture-phase keydown listener and `consume(e)` (preventDefaul
 
 Insert-link rule: Cmd/Ctrl+K inside a contenteditable editor WITH a non-empty selection inside that editor (`isEditorLinkShortcut`) is left unconsumed so Gmail's (and Calendar's) own insert-link handles it. With just a caret, Cmd+K still opens the palette; with the palette already open, it still closes it. Remapping the palette key makes Cmd+K entirely Gmail's.
 
+## Overlays own the keyboard
+
+From the instant the palette (or a `palette.choose` picker) opens, any unmodified key whose target is not the palette input is consumed by the engine and fed to the filter (`palette.typeKey`; printable keys append, Backspace deletes), and `openWith` focuses the input synchronously. Before this, keys typed in the moment before focus landed reached Gmail's native shortcuts as trusted keystrokes (f/c/u/s fired on a real thread). Keyline settings modals (`.inboxkeys-cfg-overlay`, tabs and accounts) stop propagation of every non-editable, non-Escape, non-Mod key so neither our hotkeys nor Gmail's act behind them (stopPropagation, not stopImmediate, so the modal's own recorder and Escape listeners still run). The cheat sheet swallows keys through its own window capture listener; the Calendar overlay feeds stray keys to its search box. Tests: hotkeys.test.js and gcal-ui.test.js.
+
 ## Hash routing (hashutil.js)
 
 Gmail routes everything through the URL hash. The conversation id is always the LAST slash-separated segment, no matter how many list/query/label segments precede it:
