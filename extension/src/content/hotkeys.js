@@ -150,6 +150,13 @@ window.InboxKeys = window.InboxKeys || {};
   function keyAliases(token) {
     const aliases = [token];
     if (token.startsWith("Ctrl+")) aliases.push("Mod+" + token.slice(5));
+    // The catalog writes modified letters upper case ("Mod+U" means Cmd/Ctrl+u,
+    // Shift stays explicit as in "Mod+Shift+D"); keyToken lower-cases an
+    // unshifted letter. Accept both spellings.
+    for (const a of aliases.slice()) {
+      const m = a.match(/^((?:Mod|Ctrl|Alt)\+(?:(?:Mod|Ctrl|Alt)\+)*)([a-z])$/);
+      if (m) aliases.push(m[1] + m[2].toUpperCase());
+    }
     return aliases;
   }
 
@@ -377,11 +384,6 @@ window.InboxKeys = window.InboxKeys || {};
     // Gmail/browser formatting shortcuts still work while writing.
     if (!isEditable(e.target) && !e.altKey && !e.shiftKey && (e.metaKey || e.ctrlKey)) {
       const modKey = e.key.toLowerCase();
-      if (modKey === "u" && ctx === "threadView") {
-        consume(e);
-        gmail.unsubscribe();
-        return;
-      }
       if (modKey === "o" && ctx === "threadView") {
         consume(e);
         gmail.openLinkOrAttachment(threadnav.currentCard ? threadnav.currentCard() : document);

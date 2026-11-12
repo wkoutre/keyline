@@ -31,7 +31,7 @@
     { id: "report-spam", title: "Report spam", group: "Triage", defaultKeys: ["!"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "star", title: "Star / toggle star", group: "Triage", defaultKeys: ["s"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mute", title: "Mute", group: "Triage", defaultKeys: ["Shift+M"], contexts: ["inboxList", "threadView"], fixed: true },
-    { id: "unsubscribe", title: "Unsubscribe", group: "Triage", defaultKeys: ["Mod+U"], contexts: ["threadView"], fixed: true },
+    { id: "unsubscribe", title: "Unsubscribe from sender", group: "Triage", defaultKeys: ["Mod+U"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "label", title: "Add or remove label", group: "Labels", defaultKeys: ["l"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "remove-label", title: "Remove label", group: "Labels", defaultKeys: ["y"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "remove-all-labels", title: "Remove all labels", group: "Labels", defaultKeys: ["Shift+Y"], contexts: ["inboxList", "threadView"], fixed: true },

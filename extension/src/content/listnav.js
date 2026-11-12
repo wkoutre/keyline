@@ -236,6 +236,39 @@ window.InboxKeys = window.InboxKeys || {};
     }, 1500);
   }
 
+  // Unsubscribe from the list: open the cursor conversation (Gmail only shows
+  // its unsubscribe control inside an open message), run the thread flow, then
+  // come back to the list with the cursor where it was. Acts on the cursor row
+  // only, never a multi-selection: unsubscribing is per sender.
+  function unsubscribe() {
+    const row = cursorRow();
+    if (!row) {
+      InboxKeys.toast("No conversation selected", { kind: "warn" });
+      return false;
+    }
+    const goBack = () => setTimeout(() => {
+      if (InboxKeys.hashutil.hashIsThread(location.hash || "")) gmail.back();
+    }, 300);
+    open();
+    // Stage 1: the conversation renders. Stage 2: Gmail's control appears
+    // (it can land a beat after the body); a sender without one gets a toast.
+    gmail.waitFor(
+      () => (gmail.getContext() === "threadView" ? true : null),
+      () =>
+        gmail.waitFor(
+          () => (gmail.hasUnsubscribe() ? true : null),
+          () => gmail.unsubscribe(null, { onDone: goBack }),
+          () => gmail.unsubscribe(null, { onDone: goBack }),
+          10,
+          100
+        ),
+      () => InboxKeys.toast("Couldn't open the conversation to unsubscribe", { kind: "warn" }),
+      30,
+      100
+    );
+    return true;
+  }
+
   // Gmail disables a toolbar control with aria-disabled="true" (e.g. Archive when
   // the selected mail isn't in the Inbox, so there's nothing to remove from it).
   // realClick on a dead button does nothing, so never treat one as actionable.
@@ -788,5 +821,5 @@ window.InboxKeys = window.InboxKeys || {};
     reset();
   });
 
-  InboxKeys.listnav = { move, extend, open, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page, cursorRow, armAdvance, disarmAdvance, advancing, stepReturn };
+  InboxKeys.listnav = { move, extend, open, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, unsubscribe, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page, cursorRow, armAdvance, disarmAdvance, advancing, stepReturn };
 })();
