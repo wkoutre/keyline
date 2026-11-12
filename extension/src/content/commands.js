@@ -63,6 +63,15 @@ window.InboxKeys = window.InboxKeys || {};
     };
   }
 
+  // How h reaches Gmail's Snooze menu, captured when h is pressed (before the
+  // picker takes focus): the cursor row / selection in the list, the open
+  // conversation (with auto-advance armed) otherwise. `after` continues into
+  // the custom date/time dialog; null leaves Gmail's own menu open.
+  function snoozeOpener() {
+    if (gmail.getContext() === "inboxList") return (after) => InboxKeys.listnav.snooze(after || undefined);
+    return (after) => advancing(() => gmail.snooze(after || undefined), 60000)();
+  }
+
   // "All mail from this sender / domain": the focused message's sender in a
   // conversation, the cursor row's sender in the list.
   function currentSender() {
@@ -112,7 +121,8 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("mark-read-unread", () => (gmail.getContext() === "inboxList" ? InboxKeys.listnav.markReadUnread() : gmail.markReadUnread())),
       cmd("mark-read", () => gmail.action(["Mark as read"])),
       cmd("mark-unread", () => gmail.action(["Mark as unread"])),
-      cmd("snooze", () => (gmail.getContext() === "inboxList" ? InboxKeys.listnav.snooze() : advancing(() => gmail.snooze(), 60000)())),
+      cmd("snooze", () => InboxKeys.later.snooze(snoozeOpener())),
+      cmd("schedule-send", () => InboxKeys.later.scheduleSend()),
       cmd("report-spam", advancing(() => gmail.action(["Report spam"]))),
       cmd("star", () => (gmail.getContext() === "threadView" ? gmail.toggleStar(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.toggleStar())),
       cmd("mute", advancing(() => listSelectionAction(() => gmail.mute()))),

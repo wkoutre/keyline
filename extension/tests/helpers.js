@@ -98,6 +98,7 @@ function tryLoadContentScripts(bodyHtml) {
   loadScripts(window, [
     "src/shared/hashutil.js",
     "src/shared/keymap.js",
+    "src/shared/when.js",
     "src/content/storage.js",
     "src/shared/theme.js",
     "src/content/account-sync.js",
@@ -111,6 +112,7 @@ function tryLoadContentScripts(bodyHtml) {
     "src/content/tabs.js",
     "src/content/commands.js",
     "src/content/palette.js",
+    "src/content/later.js",
     "src/content/hotkeys.js",
   ]);
   return window;

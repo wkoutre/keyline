@@ -1512,7 +1512,11 @@ function wireInlineActions(w, opts = {}) {
   assert.equal(w.__triageAction, "Mark as read", "u should mark read/unread");
 
   press(w, "h", { target: w.document.body });
-  assert.equal(w.__triageAction, "Snooze until", "h should open Gmail's native snooze/reminder UI");
+  assert.equal(w.InboxKeys.palette.isOpen(), true, "h opens the snooze picker");
+  assert.equal(w.__triageAction, "Mark as read", "nothing is clicked until a time is picked");
+  w.InboxKeys.palette.current().find((r) => r.id === "later-native-snooze").run();
+  w.InboxKeys.palette.hide();
+  assert.equal(w.__triageAction, "Snooze until", "the picker's last row opens Gmail's native snooze/reminder UI");
 
   w.__triageAction = null;
   const oldSnooze = press(w, "b", { target: w.document.body });
@@ -1594,6 +1598,8 @@ function wireInlineActions(w, opts = {}) {
   });
 
   const event = press(w, "h", { target: w.document.body });
+  w.InboxKeys.palette.current().find((r) => r.id === "later-native-snooze").run();
+  w.InboxKeys.palette.hide();
 
   assert.equal(event.defaultPrevented, true, "h should be claimed in list view");
   assert.deepEqual(w.__snoozedRows, ["two"], "h should retarget Snooze to the hovered row");
