@@ -250,6 +250,8 @@ Gotcha verified live: Google unmounts the rail calendar list (the `input[type="c
 
 No build step. Edit a file, click the refresh icon on the extension card at `chrome://extensions`, then reload Gmail.
 
+Dev self-reload (unpacked only, opt-in): create an empty `extension/dev-autoreload.flag` (gitignored, never zipped by `release.sh`). Then the service worker (`src/background/dev-reload.js`) fingerprints manifest, content scripts, css and itself, every content script asks it to recheck every 3s, and on a change it calls `chrome.runtime.reload()`; the following `onInstalled` (reason `update`) reloads open Gmail and Calendar tabs. So a `git checkout` in the test clone is live within a few seconds, with no trip to `chrome://extensions`. It is inert unless `management.getSelf().installType` is `development` AND the flag exists, so the Web Store build never does it. No new permission. Tests: `tests/dev-reload.test.js`.
+
 Load unpacked: `chrome://extensions` to Developer mode on to Load unpacked to select the `extension` folder. For smoothest hotkeys, turn on Gmail's own shortcuts (Gmail Settings, Keyboard shortcuts on).
 
 Tests run from `extension/`:
