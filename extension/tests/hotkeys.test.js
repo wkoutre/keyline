@@ -1499,8 +1499,11 @@ for (const open of [(w) => w.InboxKeys.tabs.openConfig(), (w) => w.InboxKeys.acc
   open(w);
   const btn = w.document.querySelector(".inboxkeys-cfg button");
   btn.focus();
-  press(w, "e", { target: btn });
+  const eKey = press(w, "e", { target: btn });
   press(w, "j", { target: btn });
+  assert.equal(eKey.defaultPrevented, true, "a printable key is cancelled so Gmail's keypress shortcut never fires");
+  const tab = press(w, "Tab", { target: btn });
+  assert.equal(tab.defaultPrevented, false, "Tab still moves focus between settings controls");
   assert.equal(w.__archivedRow, undefined, "e did not archive behind the settings modal");
   assert.equal(rows(w).findIndex((r) => r.classList.contains("inboxkeys-cursor")), cursorBefore, "j did not move the list cursor behind it");
   assert.deepEqual(gmailSaw, [], "Gmail's handlers did not see the keys");

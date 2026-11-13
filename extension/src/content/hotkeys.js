@@ -306,10 +306,14 @@ window.InboxKeys = window.InboxKeys || {};
     // typing, but nothing may reach the mail behind it: neither our hotkeys
     // (an "e" on a focused settings button archived the cursor row) nor
     // Gmail's native shortcuts. stopPropagation (not stopImmediate) keeps the
-    // modal's own document-level listeners running; no preventDefault, so
-    // Tab, Enter and Space still work on its buttons.
+    // modal's own document-level listeners running. Printable keys are also
+    // preventDefault'ed: Gmail's native shortcuts act on the keypress that
+    // follows, and only a cancelled keydown suppresses it (verified live: j j o
+    // on a focused settings button opened a conversation behind the modal).
+    // Tab, Enter and Space keep their default so the modal's buttons work.
     if (keylineModalOpen()) {
       if (isEditable(e.target) || e.key === "Escape" || e.metaKey || e.ctrlKey) return;
+      if (typeof e.key === "string" && e.key.length === 1 && e.key !== " ") e.preventDefault();
       e.stopPropagation();
       return;
     }
