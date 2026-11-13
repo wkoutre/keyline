@@ -15,21 +15,51 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 
 ## Store listing tab
 
-- **Name** (from the manifest): Keyline: keyboard shortcuts & command palette for Gmail
-- **Summary** (from the manifest description, 132 characters max): Open-source Cmd+K command palette, keyboard shortcuts, split-inbox tabs, and account switching for Gmail and Google Calendar.
+Chrome Web Store search weighs the name most, then the summary, then the description. Name and summary come from `manifest.json` (`name`, `description`); the description, category and images are edited in the dashboard. Leave other products' names (Superhuman, Shortwave, ...) out of all three: the store's keyword spam policy rejects listings that name other brands to rank for them. The "Superhuman alternative" angle lives off the store (README, launch posts, AlternativeTo).
+
+Search-tuned copy. Apply the name and summary to `manifest.json` only after the current review clears, because a manifest change publishes a new upload and the store rejects an upload while the previous one is still in review.
+
+- **Name** (75 characters max, 64 used): Keyline: Gmail Keyboard Shortcuts, Command Palette & Split Inbox
+- **Summary** (132 characters max, 132 used): Keyboard-first Gmail: Cmd+K palette, shortcuts, split inbox, snooze presets and undo send. Free, open source, never reads your mail.
 - **Description:**
 
-  > Keyline makes Gmail keyboard-first. Press Cmd/Ctrl+K for a command palette that runs any Gmail action, use single-key shortcuts to move through your inbox and conversations, split your inbox into tabs built from Gmail searches, and switch between signed-in accounts with one key. On Google Calendar it adds a palette for toggling calendars and jumping between days, weeks, and months.
+  > Keyline makes Gmail keyboard-first. Press Cmd+K (Ctrl+K on Windows) for a command palette that runs any Gmail action, then fly through your inbox with single-key shortcuts. No new email app, no new inbox, no account to create: it works inside the Gmail you already use.
   >
-  > Privacy by design: Keyline never uses the Gmail API, never sees your mail, and makes no network requests. It works by clicking Gmail's own buttons for you. Your settings stay in your browser.
+  > WHAT YOU GET
+  > • Command palette: Cmd/Ctrl+K to search every action, jump to any label, tab or account.
+  > • Keyboard shortcuts: j/k to move, e archive, r reply, a reply all, f forward, s star, x select, / search, plus g chords (g i inbox, g t sent, g d drafts). Remap any key.
+  > • Instant reply and forward straight from the inbox list.
+  > • Split inbox: tabs over Gmail built from any search (unread, important, a label, a sender). Tab cycles them.
+  > • Snooze and schedule send presets: later today, tomorrow morning, Monday, or type "fri 3pm".
+  > • Remind me if no reply: the conversation comes back on the day you pick, only if nobody answered.
+  > • Undo send with Cmd+Z and a countdown.
+  > • Focus mode: hide Gmail's side panels with one key.
+  > • Multiple Gmail accounts: every signed-in account in the palette by email, switch with g 0 to g 8.
+  > • Google Calendar shortcuts: a palette to toggle and focus calendars, c create, t today, d/w/m views, arrows to move.
+  > • Five themes, light and dark. Settings sync across your computers through Chrome sync.
+  > • Press ? for a cheat sheet of every shortcut.
   >
-  > Open source (MIT). A fork of Inbox Keys by Hadi Javeed.
+  > PRIVATE BY DESIGN
+  > Keyline never uses the Gmail API, never sees your mail and makes no network requests. There is no server, no analytics and no AI. It works by clicking Gmail's own buttons for you, faster. The only permission is storage, for your settings.
+  >
+  > FREE AND OPEN SOURCE
+  > MIT licensed. Read every line at github.com/wkoutre/keyline. Built on Inbox Keys by Hadi Javeed.
+  >
+  > Tip: turn on Gmail's own keyboard shortcuts (Gmail Settings, See all settings, Keyboard shortcuts on) for the smoothest experience.
 
-- **Category:** Workflow & Planning (or Productivity: Tools)
+- **Category:** Productivity: Communication (where email tools cluster; Workflow & Planning also fits).
 - **Language:** English
 - **Icon:** `extension/icons/icon128.png`
-- **Screenshots:** at least one, 1280×800 or 640×400. Take fresh ones in Gmail with a test inbox (the palette open, the split-inbox tab bar). Don't reuse upstream's marketing images, which show the Inbox Keys name.
-- **Small promo tile** (440×280): optional for an unlisted item.
+- **Screenshots** (up to 5, 1280×800, from a test inbox with no real mail; the first two show in search results, so lead with the strongest):
+  1. The Cmd+K palette open over the inbox, caption "Every Gmail action, one keystroke away".
+  2. The split-inbox tab bar with the list cursor, caption "Split your inbox into tabs".
+  3. The snooze picker with "fri 3pm" typed, caption "Snooze and schedule send in plain words".
+  4. The `?` cheat sheet in a non-default theme, caption "Every shortcut, remappable, five themes".
+  5. The Google Calendar palette, caption "Keyboard-first Google Calendar too".
+- **Small promo tile** (440×280): logo plus "Keyboard-first Gmail". Needed to be featured.
+- **Marquee** (1400×560): optional, only used if the store features the item.
+- **Official URL / homepage:** the landing page once it exists, otherwise the GitHub repo.
+- **Support URL:** `https://github.com/wkoutre/keyline/issues`
 
 ## Privacy practices tab
 
@@ -45,7 +75,7 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 ## Distribution tab
 
 - **Payments:** Free.
-- **Visibility:** **Unlisted**. Anyone with the link can install it, and it doesn't show up in search.
+- **Visibility:** **Public**, so it shows up in store search. (It started Unlisted, link only.)
 - **Regions:** All regions.
 
 ## Submit
