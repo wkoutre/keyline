@@ -176,27 +176,51 @@ window.InboxKeys = window.InboxKeys || {};
     return out;
   }
 
-  // The person the sidebar is about, or null. Thread: the focused message's
-  // sender (the last message's when no card is focused). List: the cursor
-  // row's sender.
+  function myEmail() {
+    return String((gmail() && gmail().currentEmail && gmail().currentEmail()) || "").toLowerCase();
+  }
+
+  // The person the sidebar is about, or null. Never you: found live, a
+  // thread whose latest message is your own reply showed YOU. Thread: the
+  // focused message's sender, else the newest message from someone else,
+  // else the first other recipient. List: the cursor row's first other
+  // participant (a row where you are alone has no contact).
   function currentContact() {
     const g = gmail();
     if (!g) return null;
+    const me = myEmail();
+    const notMe = (p) => p && String(p.email || "").toLowerCase() !== me;
     const ctx = g.getContext();
-    let who = null;
-    let where = "";
     if (ctx === "threadView" || (g.inThread && g.inThread())) {
-      const card = InboxKeys.threadnav && InboxKeys.threadnav.currentCard ? InboxKeys.threadnav.currentCard() : null;
-      who = g.senderOfCard(card) || g.senderOfCard(null);
-      where = "thread";
-    } else {
-      const row = InboxKeys.listnav && InboxKeys.listnav.cursorRow ? InboxKeys.listnav.cursorRow() : null;
-      who = row ? g.senderOfRow(row) : null;
-      where = "list";
-      const rec = row ? parseRow(row) : null;
-      if (who && rec) return finish(who, where, rec.key);
+      const focused = InboxKeys.threadnav && InboxKeys.threadnav.currentCard ? InboxKeys.threadnav.currentCard() : null;
+      const main = document.querySelector('[role="main"]');
+      const cards = main ? Array.from(main.querySelectorAll('[role="listitem"]')).filter((c) => c.querySelector(".gE")) : [];
+      const order = (focused ? [focused] : []).concat(cards.slice().reverse());
+      let who = null;
+      for (const c of order) {
+        const p = g.senderOfCard(c);
+        if (notMe(p)) {
+          who = p;
+          break;
+        }
+      }
+      if (!who) who = [g.senderOfCard(null)].find(notMe) || null;
+      if (!who && main) {
+        for (const chip of main.querySelectorAll(".gE span[email], span.g2[email]")) {
+          const p = personOf(chip);
+          if (notMe(p)) {
+            who = p;
+            break;
+          }
+        }
+      }
+      return finish(who, "thread", "");
     }
-    return finish(who, where, "");
+    const row = InboxKeys.listnav && InboxKeys.listnav.cursorRow ? InboxKeys.listnav.cursorRow() : null;
+    if (!row) return null;
+    const who = [g.senderOfRow(row)].find(notMe) || Array.from(row.querySelectorAll("span[email]")).map(personOf).find(notMe) || null;
+    const rec = parseRow(row);
+    return finish(who, "list", rec ? rec.key : "");
   }
 
   function finish(who, where, rowKey) {
@@ -266,8 +290,9 @@ window.InboxKeys = window.InboxKeys || {};
     return { right, top };
   }
 
-  function render(contact) {
+  function render(model) {
     if (!root) return;
+    const contact = model.contact;
     const body = root.querySelector(".inboxkeys-contact-body");
     body.textContent = "";
     if (!contact) {
@@ -277,7 +302,7 @@ window.InboxKeys = window.InboxKeys || {};
     const { email, name } = contact;
 
     const head = el("div", "inboxkeys-contact-head");
-    const src = avatarFor(email);
+    const src = model.avatar;
     if (src) {
       const img = el("img", "inboxkeys-contact-avatar");
       img.alt = "";
@@ -321,7 +346,7 @@ window.InboxKeys = window.InboxKeys || {};
     body.appendChild(actions);
 
     if (contact.where === "thread") {
-      const others = othersOnThread(email);
+      const others = model.others;
       if (others.length) {
         body.appendChild(el("div", "inboxkeys-contact-section", "Also on this conversation"));
         const list = el("div", "inboxkeys-contact-people");
@@ -332,14 +357,12 @@ window.InboxKeys = window.InboxKeys || {};
           chip.addEventListener("click", () => searchWith(p.email));
           list.appendChild(chip);
         }
+        if (others.length > 8) list.appendChild(el("span", "inboxkeys-contact-overflow", "+" + (others.length - 8) + " more"));
         body.appendChild(list);
       }
     }
 
-    scan();
-    const { ids } = contact.where === "thread" ? openThreadIds() : { ids: new Set() };
-    if (contact.rowKey) ids.add(contact.rowKey);
-    const recent = recentWith(email, { exclude: ids });
+    const recent = model.recent;
     body.appendChild(el("div", "inboxkeys-contact-section", "Recent conversations"));
     if (!recent.length) {
       body.appendChild(el("div", "inboxkeys-contact-empty", "None in the lists you've opened in this tab yet."));
@@ -364,9 +387,32 @@ window.InboxKeys = window.InboxKeys || {};
     body.appendChild(more);
   }
 
-  function keyOf(contact) {
-    if (!contact) return "none";
-    return contact.email + "|" + contact.where + "|" + (contact.rowKey || "") + "|" + location.hash + "|" + index.size;
+  // Everything the panel shows, so refresh can skip identical redraws.
+  // Found live: keying on the index size redrew the panel several times a
+  // second while Gmail rendered rows, replacing a button between mousedown and
+  // click, so real clicks on a recent conversation did nothing.
+  function modelOf(contact) {
+    if (!contact) return { contact: null };
+    scan();
+    const ids = contact.where === "thread" ? openThreadIds().ids : new Set();
+    if (contact.rowKey) ids.add(contact.rowKey);
+    return {
+      contact,
+      avatar: avatarFor(contact.email),
+      others: contact.where === "thread" ? othersOnThread(contact.email) : [],
+      recent: recentWith(contact.email, { exclude: ids }),
+    };
+  }
+
+  function signature(m) {
+    if (!m.contact) return "none";
+    return JSON.stringify([
+      m.contact.email,
+      m.contact.name,
+      m.avatar,
+      m.others.map((p) => p.email + "/" + p.name),
+      m.recent.map((r) => r.key + "/" + r.subject + "/" + r.whenText + "/" + r.unread + "/" + r.snippet),
+    ]);
   }
 
   function refresh(force) {
@@ -374,11 +420,11 @@ window.InboxKeys = window.InboxKeys || {};
     const { right, top } = placement();
     root.style.right = right + "px";
     root.style.top = top + "px";
-    const contact = currentContact();
-    const k = keyOf(contact);
+    const model = modelOf(currentContact());
+    const k = signature(model);
     if (!force && k === shownKey) return;
     shownKey = k;
-    render(contact);
+    render(model);
   }
 
   function isOpen() {

@@ -143,6 +143,63 @@ const subjects = (w) => Array.from(w.document.querySelectorAll(".inboxkeys-conta
     console.log("✓ contacts: i toggles the sidebar in a conversation");
   }
 
+  // ---- never yourself: your own reply is the latest message ----------------
+  {
+    const MINE = THREAD.replace('<div class="a3s" data-message-id="m1">hi</div>\n    </div>', `<div class="a3s" data-message-id="m1">hi</div>
+    </div>
+    <div role="listitem">
+      <div class="gE hI"><span class="gD" email="me@x.com" name="Me Myself">Me Myself</span>
+        <span class="g2" email="grecia@nectarsocial.com" name="Grecia Martinez">Grecia Martinez</span></div>
+      <div class="a3s" data-message-id="m2">thanks!</div>
+    </div>`);
+    assert.ok(MINE.includes("m2"), "fixture has a second (own) message");
+    const w = load(shell(MINE), "#inbox/" + OPEN_ID);
+    w.InboxKeys.gmail.currentEmail = () => "me@x.com";
+    press(w, "i");
+    assert.equal(panel(w).querySelector(".inboxkeys-contact-email").textContent, "grecia@nectarsocial.com", "skips your own latest message for the newest other sender");
+    w.InboxKeys.contacts.close();
+
+    // Only you wrote: fall back to the first other recipient.
+    const SOLO = `<div id="thread"><h2 class="hP" data-thread-perm-id="thread-f:9999" data-legacy-thread-id="1a1c00000000ffff">Note</h2>
+      <div role="listitem"><div class="gE hI"><span class="gD" email="me@x.com" name="Me Myself">Me Myself</span>
+        <span class="g2" email="safia@nectarsocial.com" name="safia">safia</span></div><div class="a3s" data-message-id="m1">hi</div></div></div>`;
+    const w2 = load(shell(SOLO), "#inbox/" + OPEN_ID);
+    w2.InboxKeys.gmail.currentEmail = () => "me@x.com";
+    press(w2, "i");
+    assert.equal(panel(w2).querySelector(".inboxkeys-contact-email").textContent, "safia@nectarsocial.com", "a thread only you wrote shows who you wrote to");
+    w2.InboxKeys.contacts.close();
+    console.log("✓ contacts: never shows you as the contact");
+  }
+
+  // ---- no redraw churn while Gmail renders more rows ------------------------
+  {
+    const w = load(shell(THREAD), "#inbox/" + OPEN_ID);
+    press(w, "i");
+    const before = panel(w).querySelector(".inboxkeys-contact-thread");
+    // Gmail renders an unrelated row: the index grows, the panel must not redraw.
+    w.document.querySelector('[gh="tl"] tbody').insertAdjacentHTML("beforeend", row({ id: "z", perm: "7777", legacy: "1a1c000000007777", subject: "Unrelated", snippet: "x", title: "Wed, Nov 11, 2026, 9:00 AM", short: "Nov 11", people: [["other@x.com", "Other"]] }));
+    w.InboxKeys.contacts.scan();
+    w.InboxKeys.contacts.refresh(false);
+    assert.equal(panel(w).querySelector(".inboxkeys-contact-thread"), before, "the same button stays, so a click in progress lands");
+    // A new conversation with the contact DOES redraw.
+    w.document.querySelector('[gh="tl"] tbody').insertAdjacentHTML("beforeend", row({ id: "y", perm: "8888", legacy: "1a1c000000008888", subject: "Fresh one", snippet: "x", title: "Thu, Nov 12, 2026, 9:00 AM", short: "Nov 12", people: [["grecia@nectarsocial.com", "Grecia Martinez"]] }));
+    w.InboxKeys.contacts.refresh(false);
+    assert.equal(subjects(w)[0], "Fresh one", "new conversations with the contact still appear");
+    w.InboxKeys.contacts.close();
+    console.log("✓ contacts: redraws only when what it shows changes");
+  }
+
+  // ---- more than 8 others collapse into a count ----------------------------
+  {
+    const many = Array.from({ length: 11 }, (_, i) => `<span class="g2" email="p${i}@x.com" name="P${i}">P${i}</span>`).join("");
+    const w = load(shell(THREAD.replace('<span class="g2" email="safia@nectarsocial.com" name="safia">safia</span>', many)), "#inbox/" + OPEN_ID);
+    press(w, "i");
+    assert.equal(panel(w).querySelectorAll(".inboxkeys-contact-chip").length, 8);
+    assert.equal(panel(w).querySelector(".inboxkeys-contact-overflow").textContent, "+3 more");
+    w.InboxKeys.contacts.close();
+    console.log("✓ contacts: long recipient lists show +N more");
+  }
+
   // ---- a row Gmail no longer renders opens by id ---------------------------
   {
     const w = load(shell(THREAD), "#inbox/" + OPEN_ID);
