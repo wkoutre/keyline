@@ -630,7 +630,22 @@ window.InboxKeys = window.InboxKeys || {};
       e.stopImmediatePropagation();
       return;
     }
-    // "?" (Shift+/) opens the cheat sheet. Same guards as the single keys
+    // Overlay open but the key is not aimed at it (typed before focus landed
+    // or after it drifted): swallow it and feed the filter, so it can't reach
+    // Calendar's own shortcuts or ours behind the overlay.
+    if (overlay && !mod && !overlay.contains(e.target)) {
+      const search = overlay.querySelector(`.${PREFIX}-search`);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (!search) return;
+      search.focus();
+      if (e.key.length === 1) search.value += e.key;
+      else if (e.key === "Backspace") search.value = search.value.slice(0, -1);
+      else return;
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
+        // "?" (Shift+/) opens the cheat sheet. Same guards as the single keys
     // below, except that it is a shifted key by nature.
     if (e.key === "?" && !mod && !e.altKey && !overlay && !inputOverlay && !isTyping(e.target) && !e.defaultPrevented) {
       showShortcuts();

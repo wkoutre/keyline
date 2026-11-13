@@ -264,6 +264,32 @@ function railFixture() {
   assert.match(panel.textContent, /Publish a calendar/i, "it shows the Outlook publish steps");
 }
 
+// 8b. A key aimed outside the overlay while it is open (typed before focus
+//     landed) is swallowed and fed to the filter, never run as a single key.
+{
+  const w = tryLoadGcalUi(railFixture());
+  const { openOverlay, onKeydown } = w.InboxKeys.gcalui;
+  openOverlay();
+  const search = w.document.querySelector(".inboxkeys-gcal-overlay input");
+  const ev = (key) => ({
+    key,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+    shiftKey: false,
+    target: w.document.body,
+    preventDefault() { this._pd = true; },
+    stopImmediatePropagation() { this._sip = true; },
+  });
+  const t = ev("t");
+  onKeydown(t);
+  onKeydown(ev("h"));
+  assert.equal(t._pd === true && t._sip === true, true, "the stray key is consumed");
+  assert.equal(search.value, "th", "it is typed into the overlay filter");
+  onKeydown(ev("Backspace"));
+  assert.equal(search.value, "t", "Backspace edits the filter");
+  assert.ok(w.document.querySelector(".inboxkeys-gcal-overlay"), "the overlay stays open");
+}
 // 10. The overlay closes the instant focus leaves it. This is the reliable
 //     one-press Escape on Calendar, whose window-level handler swallows the
 //     keydown but blurs our search box (moving focus out, which we catch).
