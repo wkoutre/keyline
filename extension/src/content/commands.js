@@ -140,7 +140,7 @@ window.InboxKeys = window.InboxKeys || {};
       cmd("report-spam", advancing(() => gmail.action(["Report spam"]))),
       cmd("star", () => (gmail.getContext() === "threadView" ? gmail.toggleStar(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.toggleStar())),
       cmd("mute", advancing(() => listSelectionAction(() => gmail.mute()))),
-      cmd("unsubscribe", () => gmail.unsubscribe()),
+      cmd("unsubscribe", () => (gmail.getContext() === "threadView" ? gmail.unsubscribe(InboxKeys.threadnav.currentCard() || document) : InboxKeys.listnav.unsubscribe())),
       cmd("label", () => listSelectionAction(() => gmail.openLabelMenu())),
       cmd("remove-label", () => listSelectionAction(() => gmail.removeLabel())),
       cmd("remove-all-labels", () => listSelectionAction(() => gmail.removeAllLabels())),
