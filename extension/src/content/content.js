@@ -13,6 +13,7 @@
   hotkeys.install();
   if (InboxKeys.undoSend) InboxKeys.undoSend.start();
   tabs.init();
+  if (InboxKeys.contacts) InboxKeys.contacts.init();
 
   // Learn the current account, and re-check as Gmail re-renders / navigates.
   const learn = () => accounts.rememberCurrent().catch(() => {});

@@ -194,6 +194,7 @@ window.InboxKeys = window.InboxKeys || {};
       }),
       cmd("mail-from-sender", () => mailFrom("sender")),
       cmd("mail-from-domain", () => mailFrom("domain")),
+      cmd("contact-sidebar", () => InboxKeys.contacts.toggle()),
 
       // View
       cmd("focus-mode", () => InboxKeys.focus.toggle()),

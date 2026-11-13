@@ -24,6 +24,8 @@ window.InboxKeys = window.InboxKeys || {};
     focusMode: false,
     // UI theme for every Keyline surface (see src/shared/theme.js). Syncs.
     theme: "keyline",
+    // The contact sidebar ("i") stays open across conversations once opened.
+    contactSidebar: false,
     // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
     paletteRecents: [],
     // Gmail's Undo Send window per account ({ "me@x.com": 30 }), learned from
