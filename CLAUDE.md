@@ -117,6 +117,10 @@ The engine uses a capture-phase keydown listener and `consume(e)` (preventDefaul
 
 Insert-link rule: Cmd/Ctrl+K inside a contenteditable editor WITH a non-empty selection inside that editor (`isEditorLinkShortcut`) is left unconsumed so Gmail's (and Calendar's) own insert-link handles it. With just a caret, Cmd+K still opens the palette; with the palette already open, it still closes it. Remapping the palette key makes Cmd+K entirely Gmail's.
 
+## Overlays own the keyboard
+
+From the instant the palette (or a `palette.choose` picker) opens, any unmodified key whose target is not the palette input is consumed by the engine and fed to the filter (`palette.typeKey`; printable keys append, Backspace deletes), and `openWith` focuses the input synchronously. Before this, keys typed in the moment before focus landed reached Gmail's native shortcuts as trusted keystrokes (f/c/u/s fired on a real thread). Keyline settings modals (`.inboxkeys-cfg-overlay`, tabs and accounts) stop propagation of every non-editable, non-Escape, non-Mod key so neither our hotkeys nor Gmail's act behind them (stopPropagation, not stopImmediate, so the modal's own recorder and Escape listeners still run; printable keys are also preventDefault'ed, because Gmail's native shortcuts act on the keypress, which only a cancelled keydown suppresses: verified live, j j o on a focused settings button opened a conversation). The cheat sheet swallows keys through its own window capture listener; the Calendar overlay feeds stray keys to its search box. Tests: hotkeys.test.js and gcal-ui.test.js.
+
 ## Hash routing (hashutil.js)
 
 Gmail routes everything through the URL hash. The conversation id is always the LAST slash-separated segment, no matter how many list/query/label segments precede it:
@@ -245,6 +249,8 @@ Gotcha verified live: Google unmounts the rail calendar list (the `input[type="c
 ## Develop and test
 
 No build step. Edit a file, click the refresh icon on the extension card at `chrome://extensions`, then reload Gmail.
+
+Dev self-reload (unpacked only, opt-in): create an empty `extension/dev-autoreload.flag` (gitignored, never zipped by `release.sh`). Then the service worker (`src/background/dev-reload.js`) fingerprints manifest, content scripts, css and itself, every content script asks it to recheck every 3s, and on a change it calls `chrome.runtime.reload()`; the following `onInstalled` (reason `update`) reloads open Gmail and Calendar tabs. So a `git checkout` in the test clone is live within a few seconds, with no trip to `chrome://extensions`. It is inert unless `management.getSelf().installType` is `development` AND the flag exists, so the Web Store build never does it. No new permission. Tests: `tests/dev-reload.test.js`.
 
 Load unpacked: `chrome://extensions` to Developer mode on to Load unpacked to select the `extension` folder. For smoothest hotkeys, turn on Gmail's own shortcuts (Gmail Settings, Keyboard shortcuts on).
 

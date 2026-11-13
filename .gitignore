@@ -5,3 +5,4 @@ dist/
 .dev.vars
 extension/.smoke/
 research/
+extension/dev-autoreload.flag
