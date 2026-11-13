@@ -721,6 +721,7 @@ tr.zA.inboxkeys-cursor > td:first-child { box-shadow: inset 4px 0 0 0 var(--ik-c
   right: 0;
   bottom: 16px;
   width: 300px;
+  max-width: 45vw;
   z-index: 2147483000;
   display: flex;
   flex-direction: column;

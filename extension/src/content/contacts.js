@@ -193,11 +193,17 @@ window.InboxKeys = window.InboxKeys || {};
       const row = InboxKeys.listnav && InboxKeys.listnav.cursorRow ? InboxKeys.listnav.cursorRow() : null;
       who = row ? g.senderOfRow(row) : null;
       where = "list";
+      const rec = row ? parseRow(row) : null;
+      if (who && rec) return finish(who, where, rec.key);
     }
+    return finish(who, where, "");
+  }
+
+  function finish(who, where, rowKey) {
     if (!who) return null;
     const email = String(who.email || "").toLowerCase();
     const name = clean(who.name) || email;
-    return { email, name: name === "me" ? email : name, where };
+    return { email, name: name === "me" ? email : name, where, rowKey };
   }
 
   // ---- render -------------------------------------------------------------
@@ -331,7 +337,8 @@ window.InboxKeys = window.InboxKeys || {};
     }
 
     scan();
-    const { ids } = openThreadIds();
+    const { ids } = contact.where === "thread" ? openThreadIds() : { ids: new Set() };
+    if (contact.rowKey) ids.add(contact.rowKey);
     const recent = recentWith(email, { exclude: ids });
     body.appendChild(el("div", "inboxkeys-contact-section", "Recent conversations"));
     if (!recent.length) {
@@ -359,7 +366,7 @@ window.InboxKeys = window.InboxKeys || {};
 
   function keyOf(contact) {
     if (!contact) return "none";
-    return contact.email + "|" + contact.where + "|" + location.hash + "|" + index.size;
+    return contact.email + "|" + contact.where + "|" + (contact.rowKey || "") + "|" + location.hash + "|" + index.size;
   }
 
   function refresh(force) {
@@ -395,14 +402,32 @@ window.InboxKeys = window.InboxKeys || {};
     document.body.appendChild(root);
     shownKey = "";
     refresh(true);
-    // Follow the cursor / open conversation while visible.
+    // Follow the cursor / open conversation. Events cover the common moves
+    // at once; the poll catches Gmail re-rendering on its own. Chrome throttles
+    // timers hard in a hidden or occluded window, so the poll alone can lag.
     pollTimer = setInterval(() => refresh(false), 400);
+    window.addEventListener("hashchange", soon);
+    window.addEventListener("keydown", soon, true); // window: the engine consumes keys at document
+    window.addEventListener("click", soon, true);
     return true;
+  }
+
+  // Re-check shortly after a key, click or navigation, once Gmail has reacted.
+  let soonTimers = [];
+  function soon() {
+    if (!root) return;
+    soonTimers.forEach(clearTimeout);
+    soonTimers = [60, 400, 1200].map((ms) => setTimeout(() => refresh(false), ms));
   }
 
   function close() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;
+    soonTimers.forEach(clearTimeout);
+    soonTimers = [];
+    window.removeEventListener("hashchange", soon);
+    window.removeEventListener("keydown", soon, true);
+    window.removeEventListener("click", soon, true);
     if (root) root.remove();
     root = null;
     shownKey = "";

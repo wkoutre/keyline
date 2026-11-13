@@ -159,15 +159,20 @@ const subjects = (w) => Array.from(w.document.querySelectorAll(".inboxkeys-conta
   // ---- list: follows the cursor row ----------------------------------------
   {
     const w = load(shell(), "#inbox");
+    await tick(5); // let the initial hashchange land (it resets the list cursor)
     // The cursor starts on the first row.
     press(w, "i");
     assert.equal(panel(w).querySelector(".inboxkeys-contact-email").textContent, "grecia@nectarsocial.com", "list: the cursor row's sender, skipping you");
     assert.ok(panel(w).querySelector(".inboxkeys-contact-initials"), "no avatar in the list → initials");
     assert.equal(panel(w).querySelector(".inboxkeys-contact-initials").textContent, "GM");
+    assert.ok(!subjects(w).includes("Next Steps – Technical Interview"), "the cursor row itself is not listed as a recent conversation");
+    assert.ok(subjects(w).includes("Programming Language Preference"));
     press(w, "j");
-    w.InboxKeys.contacts.refresh();
-    assert.equal(panel(w).querySelector(".inboxkeys-contact-email").textContent, "recruiting@nectarsocial.com", "moving the cursor updates the sidebar");
-    assert.deepEqual(JSON.parse(JSON.stringify(subjects(w))), ["Reminder: Submit Your Availability"]);
+    // No poll tick needed: the keydown schedules a re-check (Chrome throttles
+    // intervals in hidden windows, found live).
+    await tick(80);
+    assert.equal(panel(w).querySelector(".inboxkeys-contact-email").textContent, "recruiting@nectarsocial.com", "moving the cursor updates the sidebar right after the key");
+    assert.deepEqual(JSON.parse(JSON.stringify(subjects(w))), [], "the only conversation with them is the cursor row");
     w.InboxKeys.contacts.close();
     console.log("✓ contacts: list cursor drives the sidebar");
   }
