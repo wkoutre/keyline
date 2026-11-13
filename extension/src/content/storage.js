@@ -19,10 +19,18 @@ window.InboxKeys = window.InboxKeys || {};
     // After archive/delete/snooze/spam/mute in an open conversation, open the
     // next (older) conversation instead of returning to the list.
     autoAdvance: true,
+    // Focus mode: Gmail's side panes hidden so the list/thread fills the
+    // window (see focus.js). Syncs like other preferences.
+    focusMode: false,
     // UI theme for every Keyline surface (see src/shared/theme.js). Syncs.
     theme: "keyline",
+    // The contact sidebar ("i") stays open across conversations once opened.
+    contactSidebar: false,
     // Cmd+K "recent" rows: [{ id, title, group, hash? }], most recent first.
     paletteRecents: [],
+    // Gmail's Undo Send window per account ({ "me@x.com": 30 }), learned from
+    // Settings > General or set from Cmd+K. Only feeds the countdown chip.
+    undoSendWindows: {},
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special
     // landing tab. The user edits these from the gear in the tab bar.
     tabs: [
@@ -59,7 +67,7 @@ window.InboxKeys = window.InboxKeys || {};
   // your preferences. accountNames maps /u/N to an email, and N depends on the
   // order you signed in on each machine; paletteRecents changes on every palette
   // run and would burn the sync write quota. New settings sync by default.
-  const LOCAL_ONLY = new Set(["accountNames", "paletteRecents"]);
+  const LOCAL_ONLY = new Set(["accountNames", "paletteRecents", "undoSendWindows"]);
   const SYNC_KEYS = Object.keys(DEFAULTS).filter((k) => !LOCAL_ONLY.has(k));
   // Bookkeeping, always in chrome.storage.local:
   //   syncMigrated  this machine has copied its pre-sync settings into sync once

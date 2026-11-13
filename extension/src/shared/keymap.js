@@ -11,12 +11,16 @@
   const commands = [
     // Compose / messaging
     { id: "compose", title: "Compose new email", group: "Compose", defaultKeys: ["c"], contexts: ["inboxList", "threadView"], fixed: false },
-    { id: "reply", title: "Reply", group: "Compose", defaultKeys: ["r"], contexts: ["threadView"], fixed: false },
-    { id: "reply-all", title: "Reply all", group: "Compose", defaultKeys: ["Enter", "a"], contexts: ["threadView"], fixed: false },
-    { id: "forward", title: "Forward", group: "Compose", defaultKeys: ["f"], contexts: ["threadView"], fixed: false },
+    // reply / reply-all / forward also fire from the list: they open the cursor
+    // conversation and start the draft in one keystroke (listnav.openThen).
+    // Enter stays "open" in the list (the engine special-cases it there).
+    { id: "reply", title: "Reply", group: "Compose", defaultKeys: ["r"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "reply-all", title: "Reply all", group: "Compose", defaultKeys: ["Enter", "a"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "forward", title: "Forward", group: "Compose", defaultKeys: ["f"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "open-link-or-attachment", title: "Open link or attachment", group: "Compose", defaultKeys: ["Mod+O"], contexts: ["threadView"], fixed: true },
     { id: "attach-file", title: "Attach file", group: "Compose", defaultKeys: ["Mod+U"], contexts: ["compose"], fixed: true },
     { id: "schedule-send", title: "Schedule send…", group: "Compose", defaultKeys: ["Mod+Shift+Enter"], contexts: ["compose", "threadView"], fixed: true },
+    { id: "undo-send", title: "Undo send", group: "Compose", defaultKeys: ["Mod+Z"], contexts: ["inboxList", "threadView", "compose", "unknown"], fixed: true },
     { id: "discard-draft", title: "Discard draft", group: "Compose", defaultKeys: ["Mod+Shift+D"], contexts: ["compose", "threadView"], fixed: true },
 
     // Triage
@@ -28,6 +32,7 @@
     { id: "mark-read", title: "Mark as read", group: "Triage", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mark-unread", title: "Mark as unread", group: "Triage", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "snooze", title: "Snooze…", group: "Triage", defaultKeys: ["h"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "remind-no-reply", title: "Remind me if no reply…", group: "Triage", defaultKeys: ["Shift+H"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "report-spam", title: "Report spam", group: "Triage", defaultKeys: ["!"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "star", title: "Star / toggle star", group: "Triage", defaultKeys: ["s"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mute", title: "Mute", group: "Triage", defaultKeys: ["Shift+M"], contexts: ["inboxList", "threadView"], fixed: true },
@@ -71,7 +76,11 @@
     // Search
     { id: "search", title: "Search mail…", group: "Search", defaultKeys: ["/"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mail-from-sender", title: "All mail from this sender", group: "Search", defaultKeys: ["g f"], contexts: ["inboxList", "threadView"], fixed: false },
+    { id: "contact-sidebar", title: "Toggle contact sidebar", group: "Search", defaultKeys: ["i"], contexts: ["inboxList", "threadView"], fixed: false },
     { id: "mail-from-domain", title: "All mail from this sender's domain", group: "Search", defaultKeys: [], contexts: ["inboxList", "threadView"], fixed: false },
+
+    // View
+    { id: "focus-mode", title: "Toggle focus mode (hide Gmail sidebars)", group: "View", defaultKeys: ["Shift+Z"], contexts: DEFAULT_CONTEXTS, fixed: false },
 
     // Help
     { id: "shortcuts-help", title: "Show keyboard shortcuts", group: "Help", defaultKeys: ["?"], contexts: DEFAULT_CONTEXTS, fixed: false },

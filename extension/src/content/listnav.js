@@ -269,6 +269,32 @@ window.InboxKeys = window.InboxKeys || {};
     return true;
   }
 
+  // Instant reply / reply-all / forward from the list: open the cursor
+  // conversation, wait until Gmail has rendered it with its inline Reply /
+  // Forward controls, then run the thread action (the same code path as the
+  // key inside the conversation). If the controls never show but the
+  // conversation did open, run the action anyway so its own "control not
+  // found" toast names what is missing; if it never opened, say so.
+  function openThen(action, what) {
+    if (!cursorRow()) {
+      if (InboxKeys.toast) InboxKeys.toast("No conversation selected", { kind: "warn" });
+      return false;
+    }
+    open();
+    const opened = () => gmail.getContext() === "threadView";
+    gmail.waitFor(
+      () => (opened() && gmail.threadComposeReady() ? true : null),
+      () => action(),
+      () => {
+        if (opened()) return action();
+        if (InboxKeys.toast) InboxKeys.toast(`Couldn't open the conversation to ${what || "reply"}`, { kind: "warn" });
+      },
+      40,
+      100
+    );
+    return true;
+  }
+
   // Gmail disables a toolbar control with aria-disabled="true" (e.g. Archive when
   // the selected mail isn't in the Inbox, so there's nothing to remove from it).
   // realClick on a dead button does nothing, so never treat one as actionable.
@@ -821,5 +847,5 @@ window.InboxKeys = window.InboxKeys || {};
     reset();
   });
 
-  InboxKeys.listnav = { move, extend, open, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, unsubscribe, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page, cursorRow, armAdvance, disarmAdvance, advancing, stepReturn };
+  InboxKeys.listnav = { move, extend, open, openThen, toggleSelect, selectedRows, clearSelection, archive, trash, toggleStar, markReadUnread, snooze, unsubscribe, withSelection, withTemporarySelection, reset, focusTop, focusBottom, syncEdgeAfterScroll, page, cursorRow, armAdvance, disarmAdvance, advancing, stepReturn };
 })();
