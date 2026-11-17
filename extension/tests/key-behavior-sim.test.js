@@ -288,4 +288,14 @@ assert.match(
   "Extension name must be Keyline"
 );
 
+// Unsubscribe must never fall back to a document-wide "\bUnsubscribe\b" match:
+// every newsletter body has its own Unsubscribe link (the sender's page).
+{
+  const gm = fs.readFileSync(path.join(root, "src/content/gmail.js"), "utf8");
+  const body = gm.slice(gm.indexOf("function unsubscribeControls"), gm.indexOf("function findUnsubscribe"));
+  assert.ok(body.length > 0, "unsubscribeControls exists");
+  assert.equal((body.match(/!el\.closest\(SEL\.messageBody\)/g) || []).length, 2, "both unsubscribe lookups exclude the message body");
+  assert.doesNotMatch(gm, /findControl\(\[[^\]]*Unsubscribe/, "no findControl-based Unsubscribe lookup");
+}
+
 console.log("key behavior simulations passed");

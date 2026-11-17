@@ -121,6 +121,8 @@ window.InboxKeys = window.InboxKeys || {};
     timeInput: 'input[aria-label="Time"]',
     sendOptions: '[aria-label="More send options"], [data-tooltip="More send options"]',
     scheduleDialog: '[role="dialog"][aria-label="Schedule send"]',
+    // Gmail's header unsubscribe link for bulk senders (from List-Unsubscribe)
+    unsubscribe: '.gE span.Ca[role="link"], .gE .Ca',
     // Undo send. Gmail holds a sent message for its "Undo Send" cancellation
     // period (Settings > General: 5, 10, 20 or 30 s) and meanwhile shows a
     // "Message sent  Undo  View message" snackbar whose Undo link is
@@ -817,21 +819,103 @@ window.InboxKeys = window.InboxKeys || {};
     return clickControl(() => findControl([/^Mute$/i]), "Mute", { menu: [/^Mute$/i] });
   }
 
-  function unsubscribe() {
-    const btn = findControl([/^Unsubscribe\b/i, /\bUnsubscribe\b/i]);
+  // ---- Unsubscribe (Cmd+U) -------------------------------------------------
+  // Drives Gmail's OWN unsubscribe flow: the "Unsubscribe" control Gmail puts in
+  // a bulk sender's message header (built from the List-Unsubscribe header),
+  // then the confirm button of the dialog it opens. Gmail sends the request
+  // itself (one-click POST or mailto), so no server and no permission.
+  //
+  // Never a link inside a message body: a newsletter's footer "Unsubscribe" is
+  // the sender's own web page, and realClicking it would navigate somewhere
+  // unvetted. Never a control inside an open dialog either (that is the confirm
+  // step, handled separately).
+  const UNSUBSCRIBE_LABEL = /^Unsubscribe\b/i;
+  const UNSUBSCRIBE_CONFIRM = [/^Unsubscribe$/i, /^Go to website$/i, /^OK$/i, /^Confirm$/i];
+  const DIALOGS = '[role="dialog"], [role="alertdialog"]';
+
+  function unsubscribeControls(scope = document) {
+    // Gmail's own control first (verified live Nov 2026: span.Ca[role=link],
+    // text "Unsubscribe", no aria-label, right after the sender name in the
+    // card header, not hover-gated); then any labeled control outside the
+    // message body, so a Gmail redesign degrades to a wider search, never to
+    // the body link. Hidden list-row snippets also say "unsubscribe"; the
+    // visibility filter and the row exclusion keep them out.
+    const own = Array.from(scope.querySelectorAll(SEL.unsubscribe)).filter(
+      (el) => isVisible(el) && UNSUBSCRIBE_LABEL.test(controlLabel(el)) && !el.closest(SEL.messageBody)
+    );
+    if (own.length) return own;
+    const hits = visibleControls(scope).filter(
+      (el) =>
+        UNSUBSCRIBE_LABEL.test(controlLabel(el)) &&
+        !el.closest(SEL.messageBody) &&
+        !el.closest(SEL.composeBody) &&
+        !el.closest(SEL.listRow) &&
+        !el.closest(DIALOGS)
+    );
+    // A wrapper can inherit the label of the control inside it (textContent);
+    // keep the innermost match so the click lands on the real control.
+    return hits.filter((el) => !hits.some((o) => o !== el && el.contains(o)));
+  }
+
+  // The focused message's control first, then the latest one in the thread
+  // (Gmail shows the link on each bulk message; they all unsubscribe the same
+  // sender, and the latest is the one the user is reading).
+  function findUnsubscribe(card) {
+    if (card && card !== document && card.isConnected) {
+      const own = unsubscribeControls(card);
+      if (own.length) return own[0];
+    }
+    const all = unsubscribeControls(document);
+    return all.length ? all[all.length - 1] : null;
+  }
+
+  function hasUnsubscribe(card) {
+    return !!findUnsubscribe(card);
+  }
+
+  function showingDialogs() {
+    return Array.from(document.querySelectorAll(DIALOGS)).filter(isShowing);
+  }
+
+  // opts.onDone(ok) runs once the flow ends: true after the confirm click,
+  // false when the control or the dialog was missing.
+  function unsubscribe(card, opts = {}) {
+    const done = typeof opts.onDone === "function" ? opts.onDone : () => {};
+    const btn = findUnsubscribe(card);
     if (!btn) {
-      if (InboxKeys.toast) InboxKeys.toast("No unsubscribe action found", { kind: "warn" });
+      if (InboxKeys.toast) InboxKeys.toast("No unsubscribe option from Gmail for this sender", { kind: "warn" });
+      done(false);
       return false;
     }
+    // A dialog already on screen is not the one this click opens.
+    const stale = new Set(showingDialogs());
     realClick(btn);
     waitFor(
       () => {
-        const dialog = Array.from(document.querySelectorAll('[role="dialog"], [role="alertdialog"]')).filter(isVisible)[0];
-        return dialog ? findControl([/^Unsubscribe$/i, /^OK$/i, /^Confirm$/i], dialog) : null;
+        for (const dialog of showingDialogs()) {
+          if (stale.has(dialog)) continue;
+          for (const p of UNSUBSCRIBE_CONFIRM) {
+            const hit = Array.from(dialog.querySelectorAll('button, [role="button"]'))
+              .filter(isVisible)
+              .find((el) => p.test(controlLabel(el)));
+            if (hit) return hit;
+          }
+        }
+        return null;
       },
-      (confirm) => realClick(confirm),
-      null,
-      8,
+      (confirm) => {
+        const label = controlLabel(confirm);
+        realClick(confirm);
+        if (InboxKeys.toast) {
+          InboxKeys.toast(/website/i.test(label) ? "Opened the sender's unsubscribe page" : "Unsubscribed", { kind: "info" });
+        }
+        done(true);
+      },
+      () => {
+        clickOr(null, "Unsubscribe (confirm dialog)");
+        done(false);
+      },
+      16,
       80
     );
     return true;
@@ -1867,6 +1951,8 @@ window.InboxKeys = window.InboxKeys || {};
     markNotDone,
     mute,
     unsubscribe,
+    hasUnsubscribe,
+    waitFor,
     openLinkOrAttachment,
     extractOpenCandidates,
     openLabelMenu,
