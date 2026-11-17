@@ -3134,6 +3134,10 @@ function replyWithGeminiFixture() {
       if (w.InboxKeys.palette.isOpen()) w.InboxKeys.palette.hide();
       if (w.location.hash !== hash) w.location.hash = hash;
     }
+    // The contact-sidebar command leaves its 400ms follow-the-cursor poll
+    // running; close it and the window so the suite exits instead of hanging.
+    w.InboxKeys.contacts.close();
+    w.close();
   }
 }
 
