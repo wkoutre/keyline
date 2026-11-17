@@ -50,3 +50,5 @@ $("open-options").addEventListener("click", (e) => {
 });
 
 init();
+window.InboxKeys_LINKS.wire((msg) => ($("note").textContent = msg));
+

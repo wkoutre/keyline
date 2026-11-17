@@ -123,7 +123,7 @@ const subjects = (w) => Array.from(w.document.querySelectorAll(".inboxkeys-conta
     const chips = Array.from(p.querySelectorAll(".inboxkeys-contact-chip")).map((n) => n.textContent);
     assert.deepEqual(chips, ["safia"], "others on the thread, without you or the contact");
     assert.deepEqual(subjects(w), ["Next Steps – Technical Interview", "Programming Language Preference", "Onsite Interviews + References"], "recent conversations exclude the open one");
-    assert.deepEqual(JSON.parse(JSON.stringify(w.__saved.pop())), { contactSidebar: true }, "open state is remembered");
+    assert.deepEqual(JSON.parse(JSON.stringify(w.__saved.filter((p) => "contactSidebar" in p).pop())), { contactSidebar: true }, "open state is remembered");
 
     // All mail with them → Gmail search through the hash router.
     const btn = Array.from(p.querySelectorAll(".inboxkeys-contact-btn")).find((b) => b.textContent === "All mail with them");
@@ -139,7 +139,7 @@ const subjects = (w) => Array.from(w.document.querySelectorAll(".inboxkeys-conta
 
     press(w, "i");
     assert.equal(panel(w), null, "i again closes it");
-    assert.deepEqual(JSON.parse(JSON.stringify(w.__saved.pop())), { contactSidebar: false });
+    assert.deepEqual(JSON.parse(JSON.stringify(w.__saved.filter((p) => "contactSidebar" in p).pop())), { contactSidebar: false });
     console.log("✓ contacts: i toggles the sidebar in a conversation");
   }
 

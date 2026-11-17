@@ -1,5 +1,12 @@
 # Keyline
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/ndemgnbgodahfbbachpcefknleljgboj?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj)
+[![Users](https://img.shields.io/chrome-web-store/users/ndemgnbgodahfbbachpcefknleljgboj)](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj)
+[![Rating](https://img.shields.io/chrome-web-store/rating/ndemgnbgodahfbbachpcefknleljgboj)](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj/reviews)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj)** (free)
+
 Superhuman-speed Gmail, without giving anyone your email.
 
 Keyline is a fork of [Inbox Keys](https://github.com/hadijaveed/inbox-keys) by Hadi Javeed (MIT). It carries fixes that aren't merged upstream yet, starting with [hadijaveed/inbox-keys#2](https://github.com/hadijaveed/inbox-keys/pull/2), which fixes "Gmail control not found: Archive" in a freshly opened conversation by priming Gmail's unlabeled toolbar buttons before looking them up. Internal identifiers (`inboxkeys` CSS classes, storage keys) are left as-is so upstream changes merge cleanly.
@@ -40,7 +47,7 @@ Everything works by driving Google's own UI from content scripts: the same butto
 
 ### Chrome Web Store
 
-Not published yet. Once it is, the unlisted listing link goes here. It works in any Chromium browser (Chrome, Edge, Brave, Arc). For the smoothest behavior, turn Gmail's own shortcuts on: Gmail Settings, See all settings, Keyboard shortcuts on.
+**[Add Keyline to Chrome](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj)**. Free, and it works in any Chromium browser (Chrome, Edge, Brave, Arc, Dia). For the smoothest behavior, turn Gmail's own shortcuts on: Gmail Settings, See all settings, Keyboard shortcuts on.
 
 ### From source (2 minutes)
 
@@ -110,6 +117,15 @@ Read `CLAUDE.md` for the working guide (architecture, fragile areas, conventions
 - Default split-inbox preset (Inbox / Important and Starred / Other) with `[` `]` cycling.
 - Localized label matching.
 - Firefox (MV3) packaging.
+
+## Support Keyline
+
+Keyline is free and has no ads, accounts or upsells. If it saves you time:
+
+- **[Leave a review](https://chromewebstore.google.com/detail/ndemgnbgodahfbbachpcefknleljgboj/reviews)** on the Chrome Web Store. It's the main way other people find it.
+- **Share it** with someone who lives in Gmail (Cmd+K, then "Share Keyline" copies the link).
+- **[Open an issue](https://github.com/wkoutre/keyline/issues/new)** for bugs and feature ideas. I read every one and usually ship fixes within days.
+- Star the repo.
 
 ## License
 

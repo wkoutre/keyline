@@ -228,6 +228,7 @@ function selectText(w, el) {
   };
   local.syncMigrated = true;
   w.eval(fs.readFileSync(path.join(root, "src/shared/keymap.js"), "utf8"));
+  w.eval(fs.readFileSync(path.join(root, "src/shared/links.js"), "utf8"));
   w.eval(fs.readFileSync(path.join(root, "src/content/storage.js"), "utf8"));
   w.eval(fs.readFileSync(path.join(root, "src/options/options.js"), "utf8"));
 

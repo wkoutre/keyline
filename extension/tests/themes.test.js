@@ -224,6 +224,7 @@ const click = (w, el) => el.dispatchEvent(new w.MouseEvent("click", { bubbles: t
       },
     };
     w.eval(read("src/shared/keymap.js"));
+    w.eval(read("src/shared/links.js"));
     w.eval(read("src/content/storage.js"));
     w.eval(themeJs);
     w.eval(read("src/options/options.js"));
