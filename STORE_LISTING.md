@@ -53,13 +53,13 @@ Search-tuned copy, live in `manifest.json` since 0.7.15.
 - **Category:** Productivity: Communication (where email tools cluster; Workflow & Planning also fits).
 - **Language:** English
 - **Icon:** `extension/icons/icon128.png`
-- **Screenshots** (up to 5, 1280×800, from a test inbox with no real mail; the first two show in search results, so lead with the strongest):
-  1. The Cmd+K palette open over the inbox, caption "Every Gmail action, one keystroke away".
-  2. The split-inbox tab bar with the list cursor, caption "Split your inbox into tabs".
-  3. The snooze picker with "fri 3pm" typed, caption "Snooze and schedule send in plain words".
-  4. The `?` cheat sheet in a non-default theme, caption "Every shortcut, remappable, five themes".
-  5. The Google Calendar palette, caption "Keyboard-first Google Calendar too".
-- **Small promo tile** (440×280): logo plus "Keyboard-first Gmail". Needed to be featured.
+- **Screenshots** (up to 5, 1280×800, in `store-assets/`, made from a demo inbox with no real mail; the first two show in search results, so they lead):
+  1. `screenshot-1-palette-1280x800.png`: "Every Gmail action, one keystroke away"
+  2. `screenshot-2-tabs-1280x800.png`: "Split your inbox into tabs"
+  3. `screenshot-3-snooze-1280x800.png`: "Snooze and schedule send in plain words"
+  4. `screenshot-4-cheatsheet-1280x800.png`: "Every shortcut, one ? away"
+  5. `screenshot-5-themes-1280x800.png`: "Five themes, light and dark"
+- **Small promo tile** (440×280): `store-assets/promo-tile-440x280.png`. Needed to be featured.
 - **Marquee** (1400×560): optional, only used if the store features the item.
 - **Official URL / homepage:** the landing page once it exists, otherwise the GitHub repo.
 - **Support URL:** `https://github.com/wkoutre/keyline/issues`
