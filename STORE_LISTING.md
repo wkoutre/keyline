@@ -88,12 +88,13 @@ Releases publish themselves through `.github/workflows/publish.yml`. You never b
 
 1. Push to `main` (directly or by merging a PR) a change to `extension/manifest.json`, `extension/src/`, or `extension/icons/*.png`. Docs, tests, and tooling changes don't publish.
 2. The `bump` job raises the patch version in `manifest.json`, `package.json`, and `package-lock.json`, commits "Release vX.Y.Z" to `main`, and tags it. Pull before your next change.
-3. The `build` job checks out that commit, runs the tests, and builds the zip. The `publish` job uploads it and submits it for review.
+3. The `build` job checks out that commit, runs the tests, and builds the zip (15 minute limit, so a hung test fails fast). The `publish` job asks the store what it has, then uploads the zip and submits it for review.
 4. Review still takes hours to a few days. Installed copies update themselves after approval.
+5. The store refuses a new upload while an earlier one is still in review. When that happens `publish` skips with a notice instead of failing, and a scheduled run of the same workflow (every 4 hours) submits `main`'s current version once the review clears. Each release includes every earlier one, so versions merged during a review are never lost, only folded into the next submission.
 
 For a new major or minor line, set `version` in `extension/manifest.json` to `X.Y.0` in your commit; the release from it is `X.Y.1`. Never lower it.
 
-To release without a code change, start the workflow from the Actions tab (**Run workflow**).
+To submit `main`'s current version now (for example after a failed run), start the workflow from the Actions tab (**Run workflow**). It submits only if the store has neither published nor received that version. Tick **bump** to cut a new version without a code change.
 
 The `publish` job runs in the `chrome-web-store` GitHub environment (Settings, Environments), restricted to the `main` branch, and signs in to Google with keyless Workload Identity Federation. No credential is stored in GitHub. It reads four non-secret repository variables: `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, and `GCP_SERVICE_ACCOUNT`. Google only issues a token to a run of this repository on `main` in that environment (the provider's attribute condition in the `keyline-cws` project), and the service account `keyline-publisher@keyline-cws.iam.gserviceaccount.com` must be listed under Account, Service accounts in the developer dashboard. If `main` gets branch protection, allow GitHub Actions to push to it, or the `bump` job fails.
 

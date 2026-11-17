@@ -9,7 +9,18 @@ on:
       - "extension/manifest.json"
       - "extension/src/**"
       - "extension/icons/*.png"
+  # Catch-up: the store rejects a new upload while an earlier one is still in
+  # review, so a release merged during a review is submitted by a later
+  # scheduled run once the review clears. Each run submits main's current
+  # version only if the store has neither published nor received it yet.
+  schedule:
+    - cron: "23 */4 * * *"
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Bump the patch version first (otherwise submit main's current version if the store lacks it)"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -35,7 +46,7 @@ jobs:
   # Bumps the patch version, commits it to main, and tags it. Pushes made
   # with GITHUB_TOKEN don't trigger workflows, so this commit doesn't loop.
   bump:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.bump)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,14 +86,27 @@ jobs:
 
   build:
     needs: bump
+    # Runs after a bump, or on its own (schedule / manual run without bump).
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (needs.bump.result == 'success' || needs.bump.result == 'skipped')
     runs-on: ubuntu-latest
+    # A hung test suite once held this job for the 6 hour default and the
+    # run was cancelled, so 0.7.12 and 0.7.13 never reached the store.
+    timeout-minutes: 15
     permissions:
       contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.bump.outputs.sha }}
+          ref: ${{ needs.bump.outputs.sha || 'main' }}
           persist-credentials: false
+
+      - name: Read version
+        id: version
+        run: echo "version=$(jq -r .version extension/manifest.json)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -98,13 +122,15 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: extension-zip
-          path: extension/dist/keyline-${{ needs.bump.outputs.version }}.zip
+          path: extension/dist/keyline-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
           retention-days: 30
 
   publish:
-    needs: [bump, build]
+    needs: build
+    if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: chrome-web-store
     permissions:
       id-token: write
@@ -124,7 +150,7 @@ jobs:
 
       - name: Upload and submit for review
         env:
-          VERSION: ${{ needs.bump.outputs.version }}
+          VERSION: ${{ needs.build.outputs.version }}
           EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
           PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
           TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -139,9 +165,35 @@ jobs:
           trap 'rm -f "$hdr"' EXIT
           auth=(-H @"$hdr")
 
-          res=$(curl -sS --fail-with-body "${auth[@]}" \
+          # The store refuses an upload while an earlier submission is in
+          # review (HTTP 400), and an older or equal version is pointless.
+          # Check first; skipping is not a failure, because the scheduled run
+          # submits this version once the review clears.
+          if ! status=$(curl -sS --fail-with-body "${auth[@]}" "${item}:fetchStatus"); then
+            echo "$status"; exit 1
+          fi
+          jq '{published: .publishedItemRevisionStatus, submitted: .submittedItemRevisionStatus}' <<< "$status"
+          submitted_state=$(jq -r '.submittedItemRevisionStatus.state // ""' <<< "$status")
+          submitted_ver=$(jq -r '[.submittedItemRevisionStatus.distributionChannels[]?.crxVersion] | first // ""' <<< "$status")
+          store_ver=$(jq -r '[(.publishedItemRevisionStatus, .submittedItemRevisionStatus) | .distributionChannels[]?.crxVersion] | .[]' <<< "$status" | sort -V | tail -n1)
+          if [ "$submitted_state" = "PENDING_REVIEW" ]; then
+            echo "::notice::v${submitted_ver} is still in review; v${VERSION} will be submitted by a scheduled run after it clears."
+            exit 0
+          fi
+          if [ -n "$store_ver" ] && [ "$(printf '%s\n%s\n' "$store_ver" "$VERSION" | sort -V | tail -n1)" = "$store_ver" ]; then
+            if [ "$submitted_state" = "REJECTED" ] && [ "$submitted_ver" = "$VERSION" ]; then
+              echo "::warning::v${VERSION} was rejected in review; see the developer dashboard."
+            else
+              echo "::notice::The store already has v${store_ver} (main is v${VERSION}); nothing to submit."
+            fi
+            exit 0
+          fi
+
+          if ! res=$(curl -sS --fail-with-body "${auth[@]}" \
             -H 'X-Goog-Upload-Protocol: raw' -H 'X-Goog-Upload-File-Name: extension.zip' \
-            --data-binary @"$zip" "$upload")
+            --data-binary @"$zip" "$upload"); then
+            echo "$res"; exit 1
+          fi
           state=$(jq -r .uploadState <<< "$res")
           for _ in $(seq 1 30); do
             [ "$state" = "IN_PROGRESS" ] || break
@@ -154,5 +206,9 @@ jobs:
             exit 1
           fi
 
-          curl -sS --fail-with-body "${auth[@]}" -H 'Content-Type: application/json' \
-            -d '{"publishType":"DEFAULT_PUBLISH"}' "${item}:publish" | jq '{state, name}'
+          if ! res=$(curl -sS --fail-with-body "${auth[@]}" -H 'Content-Type: application/json' \
+            -d '{"publishType":"DEFAULT_PUBLISH"}' "${item}:publish"); then
+            echo "$res"; exit 1
+          fi
+          jq '{state, name}' <<< "$res"
+          echo "::notice::Submitted v${VERSION} for review."
