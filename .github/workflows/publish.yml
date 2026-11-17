@@ -48,6 +48,7 @@ jobs:
   bump:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.bump)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     outputs:
@@ -212,3 +213,38 @@ jobs:
           fi
           jq '{state, name}' <<< "$res"
           echo "::notice::Submitted v${VERSION} for review."
+
+  # A failed, timed-out or cancelled release must never be silent: 0.7.12 and
+  # 0.7.13 sat in a hung build for 6 hours and quietly never uploaded. Open (or
+  # comment on) a "release-failure" issue so the repo owner gets a GitHub
+  # notification with a link to the run. Holds no secrets and runs no code
+  # from the repo.
+  notify-failure:
+    needs: [bump, build, publish]
+    if: >-
+      always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the release-failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+          RESULTS: bump=${{ needs.bump.result }} build=${{ needs.build.result }} publish=${{ needs.publish.result }}
+        run: |
+          set -euo pipefail
+          gh label create release-failure --color B60205 \
+            --description "Chrome Web Store publish run failed" 2>/dev/null || true
+          body="Publish run failed (${EVENT}): ${RESULTS}
+
+          ${RUN_URL}"
+          num=$(gh issue list --label release-failure --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$num" ]; then
+            gh issue comment "$num" --body "$body"
+          else
+            gh issue create --title "Chrome Web Store publish failed" --label release-failure --body "$body"
+          fi
