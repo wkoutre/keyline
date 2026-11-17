@@ -17,7 +17,7 @@ Everything you paste into the Chrome Web Store dashboard for Keyline, plus the s
 
 Chrome Web Store search weighs the name most, then the summary, then the description. Name and summary come from `manifest.json` (`name`, `description`); the description, category and images are edited in the dashboard. Leave other products' names (Superhuman, Shortwave, ...) out of all three: the store's keyword spam policy rejects listings that name other brands to rank for them. The "Superhuman alternative" angle lives off the store (README, launch posts, AlternativeTo).
 
-Search-tuned copy. Apply the name and summary to `manifest.json` only after the current review clears, because a manifest change publishes a new upload and the store rejects an upload while the previous one is still in review.
+Search-tuned copy, live in `manifest.json` since 0.7.15.
 
 - **Name** (75 characters max, 64 used): Keyline: Gmail Keyboard Shortcuts, Command Palette & Split Inbox
 - **Summary** (132 characters max, 132 used): Keyboard-first Gmail: Cmd+K palette, shortcuts, split inbox, snooze presets and undo send. Free, open source, never reads your mail.
@@ -44,6 +44,9 @@ Search-tuned copy. Apply the name and summary to `manifest.json` only after the 
   >
   > FREE AND OPEN SOURCE
   > MIT licensed. Read every line at github.com/wkoutre/keyline. Built on Inbox Keys by Hadi Javeed.
+  >
+  > ACTIVELY MAINTAINED
+  > Keyline is made by one developer who reads every review and GitHub issue and ships fixes fast, usually within days. Found a bug or want a feature? Open an issue at github.com/wkoutre/keyline/issues, or press Cmd+K and choose "Send feedback". If Keyline saves you time, a review here is the best way to help other people find it.
   >
   > Tip: turn on Gmail's own keyboard shortcuts (Gmail Settings, See all settings, Keyboard shortcuts on) for the smoothest experience.
 

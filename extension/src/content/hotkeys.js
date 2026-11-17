@@ -221,6 +221,7 @@ window.InboxKeys = window.InboxKeys || {};
       if (hit) {
         consume(e);
         hit.cmd.run();
+        if (InboxKeys.share) InboxKeys.share.count();
         return true;
       }
       // fall through: maybe the second key is itself a single binding
@@ -241,6 +242,7 @@ window.InboxKeys = window.InboxKeys || {};
     if (single) {
       consume(e);
       single.cmd.run();
+      if (InboxKeys.share) InboxKeys.share.count();
       return true;
     }
     return false;

@@ -601,3 +601,9 @@ $("keymapSearch").addEventListener("input", renderKeymap);
 $("resetAll").addEventListener("click", resetAllBindings);
 
 load();
+
+window.InboxKeys_LINKS.wire((msg) => {
+  $("saved").textContent = msg;
+  clearTimeout(flashSaved._t);
+  flashSaved._t = setTimeout(() => ($("saved").textContent = ""), 4000);
+});

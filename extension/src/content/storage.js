@@ -31,6 +31,12 @@ window.InboxKeys = window.InboxKeys || {};
     // Gmail's Undo Send window per account ({ "me@x.com": 30 }), learned from
     // Settings > General or set from Cmd+K. Only feeds the countdown chip.
     undoSendWindows: {},
+    // Rate/share card (share.js): { uses, since, until, laters } on this
+    // machine. The counter never leaves the browser.
+    shareNudge: {},
+    // Answered the rate/share card (or rated, shared): syncs so the card
+    // stops on every computer.
+    shareNudgeDone: false,
     // Split-inbox tabs. Each tab is a saved Gmail search; "inbox" is the special
     // landing tab. The user edits these from the gear in the tab bar.
     tabs: [
@@ -67,7 +73,7 @@ window.InboxKeys = window.InboxKeys || {};
   // your preferences. accountNames maps /u/N to an email, and N depends on the
   // order you signed in on each machine; paletteRecents changes on every palette
   // run and would burn the sync write quota. New settings sync by default.
-  const LOCAL_ONLY = new Set(["accountNames", "paletteRecents", "undoSendWindows"]);
+  const LOCAL_ONLY = new Set(["accountNames", "paletteRecents", "undoSendWindows", "shareNudge"]);
   const SYNC_KEYS = Object.keys(DEFAULTS).filter((k) => !LOCAL_ONLY.has(k));
   // Bookkeeping, always in chrome.storage.local:
   //   syncMigrated  this machine has copied its pre-sync settings into sync once

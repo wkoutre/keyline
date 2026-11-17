@@ -29,3 +29,6 @@ kbd {
 }
 .note { font-size: 11px; color: var(--ik-text-subtle); margin: 8px 0 0; min-height: 14px; }
 input[type="checkbox"] { accent-color: var(--ik-accent); }
+.love { font-size: 12px; color: var(--ik-text-muted); margin: 10px 0 0; text-align: center; }
+.love a { color: var(--ik-accent); text-decoration: none; cursor: pointer; }
+.love a:hover { text-decoration: underline; }

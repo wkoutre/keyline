@@ -123,3 +123,9 @@ kbd {
 .theme-inspired { font-size: 11px; color: var(--ik-text-subtle); margin-left: 4px; font-weight: 500; }
 .theme-note { font-size: 11px; line-height: 1.35; color: var(--ik-text-muted); }
 input[type="checkbox"] { accent-color: var(--ik-accent); }
+.love-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.love-actions a { text-decoration: none; display: inline-flex; align-items: center; }
+.btn-primary {
+  background: var(--ik-btn-bg); color: var(--ik-btn-text); border: 0;
+  border-radius: var(--ik-radius-btn); padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+}

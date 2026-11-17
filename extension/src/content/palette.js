@@ -216,6 +216,7 @@ window.InboxKeys = window.InboxKeys || {};
     const fromRegistry = !chooseItems;
     hide();
     if (fromRegistry && commands.remember) commands.remember(cmd);
+    if (fromRegistry && InboxKeys.share) InboxKeys.share.count();
     // Defer so the palette is fully gone before Gmail handles focus/keys.
     setTimeout(() => {
       try {
