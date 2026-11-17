@@ -269,7 +269,7 @@ npm install   # once; installs jsdom (dev dependency, node_modules is gitignored
 npm test
 ```
 
-The suite is plain `node:assert` scripts, no framework. Four files:
+The suite is plain `node:assert` scripts, no framework. `npm test` runs `tests/run.js`, which discovers every `tests/*.test.js` (no hand-kept list), runs each in its own process with a 60s per-file timeout (`KEYLINE_TEST_TIMEOUT_MS`) and a 5 minute suite deadline (`KEYLINE_SUITE_TIMEOUT_MS`). A file that leaves a timer, interval or jsdom window open fails at the timeout with its open handles listed (`tests/guard.js`), instead of hanging the run; close what a test starts (`window.close()`, stop polls). `tests/runner.test.js` pins this and also requires `timeout-minutes` on every CI job. CI: `Tests` workflow runs the suite on every PR; a failed or cancelled publish run opens or comments on a `release-failure` issue. Four files:
 
 - `tests/hashutil.test.js` pure unit tests of the hash logic across every hash shape.
 - `tests/getcontext.test.js` loads real `gmail.js` into jsdom and asserts `getContext` for every state, including a thread opened from search.
