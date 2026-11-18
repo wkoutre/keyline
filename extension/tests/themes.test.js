@@ -183,8 +183,9 @@ const click = (w, el) => el.dispatchEvent(new w.MouseEvent("click", { bubbles: t
     w.InboxKeys.tabs.openConfig("appearance");
     const cfg3 = w.document.querySelector(".inboxkeys-cfg");
     click(w, cfg3.querySelector('.inboxkeys-theme-card[data-theme="clay"]'));
+    w.InboxKeys.tabs.savedCloseMs = 0;
     click(w, cfg3.querySelector(".inboxkeys-cfg-save"));
-    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 10));
     assert.equal(w.InboxKeys.storage.get("theme"), "clay", "Save keeps it");
     assert.equal(attr(w), "clay", "and it stays applied after the modal closes");
     assert.equal(w.__writes.pop().theme, "clay", "persisted with the other settings");

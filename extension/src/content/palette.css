@@ -584,6 +584,32 @@
 .inboxkeys-btn--ghost { background: transparent; color: var(--ik-text-muted); }
 .inboxkeys-btn--ghost:hover { background: var(--ik-fill); }
 
+/* Save -> checkmark. The button shrinks to a circle (tabs.js pins the start
+   width), turns success green, and the check strokes in. */
+.inboxkeys-cfg-save {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle; overflow: hidden; white-space: nowrap;
+  transition: width 220ms cubic-bezier(.2,.8,.2,1), border-radius 220ms ease,
+    background-color 180ms ease, color 180ms ease;
+}
+.inboxkeys-cfg-save--saved {
+  padding: 0; border-radius: 999px; cursor: default;
+  background: var(--ik-success-bg); color: var(--ik-success-text);
+}
+.inboxkeys-cfg-save-label { transition: opacity 120ms ease; }
+.inboxkeys-cfg-save--saved .inboxkeys-cfg-save-label { opacity: 0; position: absolute; }
+.inboxkeys-cfg-save-check { width: 18px; height: 18px; }
+.inboxkeys-cfg-save-check path {
+  stroke-dasharray: 24; stroke-dashoffset: 24;
+  animation: inboxkeys-check-draw 260ms 160ms cubic-bezier(.65,0,.45,1) forwards;
+}
+@keyframes inboxkeys-check-draw { to { stroke-dashoffset: 0; } }
+.inboxkeys-cfg-cancel:disabled { opacity: .5; cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .inboxkeys-cfg-save, .inboxkeys-cfg-save-label { transition: none; }
+  .inboxkeys-cfg-save-check path { animation: none; stroke-dashoffset: 0; }
+}
+
 @media (max-width: 760px) {
   .inboxkeys-cfg {
     margin-top: 3vh;

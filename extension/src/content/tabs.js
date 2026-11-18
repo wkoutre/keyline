@@ -715,14 +715,32 @@ window.InboxKeys = window.InboxKeys || {};
     });
     cfg.querySelector(".inboxkeys-cfg-cancel").addEventListener("click", closeConfig);
     cfg.querySelector(".inboxkeys-cfg-x").addEventListener("click", closeConfig);
-    cfg.querySelector(".inboxkeys-cfg-save").addEventListener("click", async () => {
+    const saveBtn = cfg.querySelector(".inboxkeys-cfg-save");
+    saveBtn.addEventListener("click", async () => {
+      if (saveBtn.dataset.state) return; // already saving or saved
+      if (shortcutRecording) cancelShortcutRecording(false);
       const cleaned = working
         .map((t) => ({ ...t, name: (t.name || "").trim() }))
         .filter((t) => t.type === "inbox" || (t.name && (t.query || "").trim()));
-      await storage.set({ tabs: cleaned, keyOverrides: workingKeyOverrides, theme: workingTheme });
-      closeConfig();
+      const modal = cfg;
+      saveBtn.dataset.state = "saving";
+      saveBtn.setAttribute("aria-busy", "true");
+      try {
+        await storage.set({ tabs: cleaned, keyOverrides: workingKeyOverrides, theme: workingTheme });
+      } catch (err) {
+        console.warn("[Keyline] saving settings failed:", err && err.message);
+        delete saveBtn.dataset.state;
+        saveBtn.removeAttribute("aria-busy");
+        InboxKeys.toast("Couldn't save settings. Try again.");
+        return;
+      }
       rebuild();
-      InboxKeys.toast("Settings saved");
+      if (cfg !== modal) return; // closed while the write was in flight
+      showSaved(saveBtn);
+      savedCloseTimer = setTimeout(() => {
+        savedCloseTimer = null;
+        if (cfg === modal) closeConfig();
+      }, InboxKeys.tabs.savedCloseMs);
     });
     cfg.addEventListener("mousedown", (e) => {
       if (e.target === cfg) closeConfig();
@@ -739,7 +757,35 @@ window.InboxKeys = window.InboxKeys || {};
     }
   }
 
+  // Save success: the button morphs into a round checkmark (CSS in
+  // palette.css, motion dropped under prefers-reduced-motion), then the modal
+  // closes after savedCloseMs so the confirmation is actually seen.
+  let savedCloseTimer = null;
+  const CHECK_SVG =
+    '<svg class="inboxkeys-cfg-save-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function showSaved(btn) {
+    // Pin the current size first so the width can transition to a circle.
+    const w = btn.offsetWidth;
+    const h = btn.offsetHeight;
+    if (w && h) {
+      btn.style.width = w + "px";
+      void btn.offsetWidth; // commit the start width before the change
+      btn.style.width = h + "px";
+    }
+    btn.dataset.state = "saved";
+    btn.removeAttribute("aria-busy");
+    btn.setAttribute("aria-label", "Saved");
+    btn.classList.add("inboxkeys-cfg-save--saved");
+    btn.innerHTML = '<span class="inboxkeys-cfg-save-label" aria-hidden="true">Save</span>' + CHECK_SVG;
+    const cancel = cfg && cfg.querySelector(".inboxkeys-cfg-cancel");
+    if (cancel) cancel.disabled = true;
+  }
+
   function closeConfig() {
+    if (savedCloseTimer) clearTimeout(savedCloseTimer);
+    savedCloseTimer = null;
     if (shortcutRecording && typeof shortcutRecording.cancel === "function") shortcutRecording.cancel(false);
     document.removeEventListener("keydown", onCfgKey, true);
     if (cfg) cfg.remove();
@@ -782,5 +828,6 @@ window.InboxKeys = window.InboxKeys || {};
     });
   }
 
-  InboxKeys.tabs = { init, openConfig, navigate, list: tabs, next, prev };
+  // savedCloseMs: how long the Save checkmark shows before the modal closes.
+  InboxKeys.tabs = { init, openConfig, navigate, list: tabs, next, prev, savedCloseMs: 800 };
 })();
