@@ -588,7 +588,7 @@
    width), turns success green, and the check strokes in. */
 .inboxkeys-cfg-save {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
-  vertical-align: middle; overflow: hidden; white-space: nowrap;
+  box-sizing: border-box; vertical-align: middle; overflow: hidden; white-space: nowrap;
   transition: width 220ms cubic-bezier(.2,.8,.2,1), border-radius 220ms ease,
     background-color 180ms ease, color 180ms ease;
 }

@@ -782,6 +782,7 @@ window.InboxKeys = window.InboxKeys || {};
     const h = btn.offsetHeight;
     if (w && h) {
       btn.style.width = w + "px";
+      btn.style.height = h + "px"; // padding goes to 0, keep the height
       void btn.offsetWidth; // commit the start width before the change
       btn.style.width = h + "px";
     }
