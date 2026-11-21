@@ -69,6 +69,7 @@ const surfaces = {
   "src/content/palette.css": read("src/content/palette.css"),
   "src/options/options.css": read("src/options/options.css"),
   "src/popup/popup.css": read("src/popup/popup.css"),
+  "src/shared/brand.css": read("src/shared/brand.css"),
   "src/content/gcal-ui.js (overlay css)": (() => {
     const s = read("src/content/gcal-ui.js");
     return s.slice(s.indexOf("const css = `"), s.indexOf("`;", s.indexOf("const css = `")));

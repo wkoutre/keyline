@@ -15,6 +15,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     devReload.check().then(sendResponse, () => sendResponse({ dev: false }));
     return true;
   }
+  // A content script can't open the options page itself; "Donate" in the
+  // palette lands on its Support section.
+  if (msg && msg.type === "inboxkeys:open-options") {
+    const hash = /^[a-z-]+$/.test(msg.section || "") ? "#" + msg.section : "";
+    chrome.tabs.create({ url: chrome.runtime.getURL("src/options/options.html" + hash) });
+    sendResponse({ ok: true });
+    return;
+  }
   if (msg && msg.type === "inboxkeys:relay") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs[0];

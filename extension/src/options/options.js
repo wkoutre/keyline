@@ -602,6 +602,13 @@ $("resetAll").addEventListener("click", resetAllBindings);
 
 load();
 
+{
+  const z = document.getElementById("zelle-num");
+  if (z) z.textContent = window.InboxKeys_LINKS.zelle;
+  const v = document.getElementById("version");
+  const m = chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest() : null;
+  if (v && m && m.version) v.textContent = "v" + m.version;
+}
 window.InboxKeys_LINKS.wire((msg) => {
   $("saved").textContent = msg;
   clearTimeout(flashSaved._t);

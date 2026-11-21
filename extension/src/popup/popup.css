@@ -1,34 +1,84 @@
 :root { color-scheme: light dark; }
 body {
-  width: 280px;
-  margin: 0;
-  padding: 14px;
-  font-family: var(--ik-font);
-  background: var(--ik-surface);
-  color: var(--ik-text);
+  width: 340px; margin: 0; padding: 0;
+  font-family: var(--ik-font); font-size: 13px;
+  background: var(--ik-page); color: var(--ik-text);
 }
-.head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.title { font-weight: 700; font-size: 15px; }
-.sub { font-size: 12px; color: var(--ik-text-muted); }
-button, .link {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; box-sizing: border-box; border-radius: var(--ik-radius-btn);
-  font-size: 13px; cursor: pointer; text-decoration: none;
-  padding: 9px 12px; margin-bottom: 8px; border: 0;
+button { font: inherit; }
+a { color: inherit; }
+
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 16px 14px;
 }
-.primary { background: var(--ik-btn-bg); color: var(--ik-btn-text); font-weight: 600; }
-.ghost { background: transparent; color: var(--ik-text-muted); border: 1px solid var(--ik-border); }
-.link { color: var(--ik-accent); border: 0; justify-content: flex-start; }
-.row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 2px; border-bottom: 1px solid var(--ik-divider); font-size: 13px;
+.master { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ik-hero-text); cursor: pointer; }
+
+#body { padding: 14px 16px 4px; transition: opacity .15s ease; }
+body.off #body { opacity: .45; pointer-events: none; }
+
+/* Looks like the Cmd+K palette's input: clicking it opens the real one. */
+.launcher {
+  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin: 0 0 14px;
+  padding: 10px 12px; cursor: pointer; text-align: left;
+  background: var(--ik-surface); color: var(--ik-text-subtle);
+  border: 1px solid var(--ik-border); border-radius: var(--ik-radius);
+  box-shadow: 0 1px 2px var(--ik-tab-hover);
 }
-kbd {
-  font-family: var(--ik-font-mono); font-size: 11px;
-  background: var(--ik-accent-soft); border: 1px solid var(--ik-accent-border); border-radius: 5px; padding: 2px 5px; color: var(--ik-accent);
+.launcher:hover { border-color: var(--ik-accent-border); box-shadow: 0 0 0 3px var(--ik-accent-ring); }
+.launcher:focus-visible { outline: none; border-color: var(--ik-accent); box-shadow: 0 0 0 3px var(--ik-accent-ring); }
+.launcher svg { width: 16px; height: 16px; color: var(--ik-accent); flex: none; }
+.launcher-text { flex: 1; font-size: 13.5px; }
+.launcher .ik-kbd { background: var(--ik-accent-soft); border-color: var(--ik-accent-border); color: var(--ik-accent); }
+
+.away {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 0 0 14px; padding: 12px; border-radius: var(--ik-radius);
+  background: var(--ik-accent-soft); border: 1px solid var(--ik-accent-border);
 }
-.note { font-size: 11px; color: var(--ik-text-subtle); margin: 8px 0 0; min-height: 14px; }
-input[type="checkbox"] { accent-color: var(--ik-accent); }
-.love { font-size: 12px; color: var(--ik-text-muted); margin: 10px 0 0; text-align: center; }
-.love a { color: var(--ik-accent); text-decoration: none; cursor: pointer; }
-.love a:hover { text-decoration: underline; }
+.away[hidden] { display: none; }
+.away-title { font-weight: 650; font-size: 13px; }
+.away-sub { font-size: 12px; color: var(--ik-text-muted); margin-top: 3px; }
+body.not-gmail .launcher { display: none; }
+
+.features { margin-bottom: 10px; }
+.feature {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin: 0 0 6px; cursor: pointer;
+  background: var(--ik-surface); border: 1px solid var(--ik-border); border-radius: calc(var(--ik-radius-md) + 2px);
+}
+.feature-icon {
+  display: flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: var(--ik-radius-md);
+  background: var(--ik-accent-soft); color: var(--ik-accent);
+}
+.feature-icon svg { width: 16px; height: 16px; }
+.feature-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.feature-name { font-weight: 600; }
+.feature-sub { font-size: 11.5px; color: var(--ik-text-muted); display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.feature-sub .ik-kbd { font-size: 10px; padding: 0 4px; }
+
+.quick { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 6px; margin-top: 8px; }
+.quick .ik-btn { padding: 7px 6px; font-weight: 550; }
+.quick .ik-kbd { font-size: 10px; padding: 0 4px; }
+
+.support { margin: 8px 16px 0; padding: 12px 0 0; border-top: 1px solid var(--ik-divider); }
+.support-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.support-row .ik-btn { padding: 7px 4px; font-weight: 550; }
+.donate-toggle[aria-expanded="true"] { border-color: var(--ik-accent); color: var(--ik-accent); background: var(--ik-accent-soft); }
+.donate-toggle svg { color: var(--ik-danger-text); }
+.donate { margin-top: 10px; padding: 12px; border-radius: var(--ik-radius); background: var(--ik-surface); border: 1px solid var(--ik-border); }
+.donate[hidden] { display: none; }
+.donate-text { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: var(--ik-text-muted); }
+.donate-options { display: flex; flex-direction: column; gap: 6px; }
+.donate-options .ik-btn { width: 100%; padding: 9px 12px; }
+.zelle { justify-content: space-between; }
+.zelle-num { font-family: var(--ik-font-mono); font-weight: 500; color: var(--ik-text-muted); flex: 1; text-align: left; margin-left: 4px; }
+.copy-hint { font-size: 11px; font-weight: 600; color: var(--ik-accent); }
+
+.foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 16px 12px; font-size: 11px; color: var(--ik-text-subtle);
+}
+.note { color: var(--ik-success-text); font-weight: 600; min-height: 14px; }
+.ver { white-space: nowrap; margin-left: auto; }
+.ver a { color: var(--ik-text-muted); text-decoration: none; }
+.ver a:hover { color: var(--ik-accent); text-decoration: underline; }

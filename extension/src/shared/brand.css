@@ -1,0 +1,83 @@
+/* Keyline brand components, shared by the toolbar popup and the settings page
+   so both read as one product with the Cmd+K palette: the same wordmark,
+   keycaps, switches and buttons. Colors come only from --ik-* tokens
+   (themes.css), so every theme restyles these too. */
+
+.ik-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ik-brand-logo { width: 30px; height: 30px; flex: none; display: block; }
+.ik-brand-text { display: flex; flex-direction: column; min-width: 0; }
+.ik-wordmark {
+  font-family: var(--ik-font-display); font-weight: 750; font-size: 16px;
+  letter-spacing: -0.01em; line-height: 1.15; color: var(--ik-text);
+}
+.ik-wordmark-tag {
+  font-family: var(--ik-font); font-weight: 500; font-size: 11px; color: var(--ik-accent);
+  background: var(--ik-accent-soft); border: 1px solid var(--ik-accent-border);
+  border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px;
+}
+.ik-brand-sub {
+  font-size: 12px; color: var(--ik-text-muted); line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* The brand band: the same gradient as the store art and promo tile, per
+   theme. Logo sits on a light tile so it reads on every gradient. */
+.ik-hero { background: var(--ik-hero); color: var(--ik-hero-text); }
+.ik-hero .ik-wordmark { color: var(--ik-hero-text); }
+.ik-hero .ik-brand-sub { color: var(--ik-hero-text); opacity: .82; }
+.ik-hero .ik-brand-logo {
+  background: var(--ik-hero-text); border-radius: 9px; padding: 3px; box-sizing: border-box;
+  box-shadow: 0 2px 8px var(--ik-scrim);
+}
+.ik-hero .ik-wordmark-tag { color: var(--ik-hero-text); background: transparent; border-color: currentColor; opacity: .9; }
+.ik-hero .ik-switch:not(:checked) { background: var(--ik-scrim); }
+.ik-hero .ik-switch:checked { background: var(--ik-hero-text); }
+.ik-hero .ik-switch:checked::after { background: var(--ik-accent-fill); }
+
+/* Small uppercase group label, the same one the palette uses. */
+.ik-eyebrow {
+  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ik-text-subtle); margin: 0 0 6px;
+}
+
+/* Keycap. */
+.ik-kbd {
+  font-family: var(--ik-font-mono); font-size: 11px; line-height: 1.4; white-space: nowrap;
+  color: var(--ik-text-kbd); background: var(--ik-fill);
+  border: 1px solid var(--ik-border); border-bottom-width: 2px; border-radius: var(--ik-radius-sm);
+  padding: 1px 6px;
+}
+
+/* Toggle switch: a checkbox drawn as a pill. Keeps native focus and keyboard. */
+.ik-switch {
+  appearance: none; -webkit-appearance: none; flex: none; margin: 0; cursor: pointer;
+  position: relative; width: 34px; height: 20px; border-radius: 999px;
+  background: var(--ik-border-strong); transition: background .15s ease;
+}
+.ik-switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 999px; background: var(--ik-surface); box-shadow: 0 1px 2px var(--ik-scrim);
+  transition: transform .15s ease;
+}
+.ik-switch:checked { background: var(--ik-accent-fill); }
+.ik-switch:checked::after { transform: translateX(14px); background: var(--ik-on-accent); }
+.ik-switch:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ik-accent-ring); }
+
+/* Buttons. */
+.ik-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-sizing: border-box; margin: 0; cursor: pointer; text-decoration: none; white-space: nowrap;
+  font: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.2;
+  padding: 7px 11px; border-radius: var(--ik-radius-btn);
+  border: 1px solid var(--ik-border); background: var(--ik-surface); color: var(--ik-text);
+}
+.ik-btn:hover { border-color: var(--ik-accent-border); background: var(--ik-accent-soft); color: var(--ik-accent); }
+.ik-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ik-accent-ring); }
+.ik-btn-primary { background: var(--ik-btn-bg); color: var(--ik-btn-text); border-color: transparent; }
+.ik-btn-primary:hover { background: var(--ik-btn-bg); color: var(--ik-btn-text); border-color: transparent; filter: brightness(1.08); }
+.ik-btn svg { width: 14px; height: 14px; flex: none; }
+
+.ik-card {
+  background: var(--ik-surface); border: 1px solid var(--ik-border);
+  border-radius: calc(var(--ik-radius-md) + 4px);
+}

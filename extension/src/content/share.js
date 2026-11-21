@@ -152,16 +152,26 @@ window.InboxKeys = window.InboxKeys || {};
     document.documentElement.appendChild(card);
   }
 
+  // PayPal and Zelle live on the settings page's Support section.
+  function donate() {
+    try {
+      chrome.runtime.sendMessage({ type: "inboxkeys:open-options", section: "support" });
+    } catch (_) {
+      window.open(L.paypal, "_blank", "noopener");
+    }
+  }
+
   function commands() {
     const contexts = InboxKeys_KEYMAP.DEFAULT_CONTEXTS;
     return [
       { id: "keyline-rate", title: "Rate Keyline on the Chrome Web Store", group: "Keyline", keys: [], contexts, run: rate },
       { id: "keyline-share", title: "Share Keyline (copy link)", group: "Keyline", keys: [], contexts, run: copyShare },
       { id: "keyline-feedback", title: "Send feedback or report a bug", group: "Keyline", keys: [], contexts, run: feedback },
+      { id: "keyline-donate", title: "Donate to Keyline (PayPal or Zelle)", group: "Keyline", keys: [], contexts, run: donate },
     ];
   }
 
   if (InboxKeys.commands && InboxKeys.commands.register) commands().forEach((c) => InboxKeys.commands.register(c));
 
-  InboxKeys.share = { count, maybeShow, eligible, later, rate, copyShare, feedback, close, USES, DAYS, LATER_DAYS };
+  InboxKeys.share = { count, maybeShow, eligible, later, rate, copyShare, feedback, donate, close, USES, DAYS, LATER_DAYS };
 })();

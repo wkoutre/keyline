@@ -35,6 +35,10 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === "inboxkeys:open-palette") palette.show();
     if (msg && msg.type === "inboxkeys:open-tabs-config") tabs.openConfig();
+    if (msg && msg.type === "inboxkeys:open-cheatsheet") {
+      const help = InboxKeys.commands.all().find((c) => c.id === "shortcuts-help");
+      if (help && !(InboxKeys.cheatsheet && InboxKeys.cheatsheet.isOpen())) help.run();
+    }
   });
 
   // Dev-only: an unpacked build with the dev-autoreload flag reloads itself

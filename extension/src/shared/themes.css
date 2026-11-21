@@ -63,6 +63,8 @@
   --ik-cursor-bg: rgba(79, 70, 229, 0.16);
   --ik-cursor-bar: #4f46e5;
   --ik-msg-bar: #1a73e8;
+  --ik-hero: linear-gradient(135deg, #312e81, #4f46e5 55%, #0e7490);
+  --ik-hero-text: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root,
@@ -108,6 +110,8 @@
     --ik-cursor-bg: rgba(124, 127, 246, 0.2);
     --ik-cursor-bar: #7c7ff6;
     --ik-msg-bar: #8ab4f8;
+    --ik-hero: linear-gradient(135deg, #1e1b4b, #4338ca 55%, #0e7490);
+    --ik-hero-text: #ffffff;
   }
 }
 
@@ -164,6 +168,8 @@
   --ik-cursor-bg: rgba(201, 100, 66, 0.13);
   --ik-cursor-bar: #c96442;
   --ik-msg-bar: #c96442;
+  --ik-hero: linear-gradient(135deg, #8a3f24, #c96442 60%, #d97757);
+  --ik-hero-text: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-inboxkeys-theme="clay"] {
@@ -208,6 +214,8 @@
     --ik-cursor-bg: rgba(217, 119, 87, 0.18);
     --ik-cursor-bar: #d97757;
     --ik-msg-bar: #d97757;
+    --ik-hero: linear-gradient(135deg, #5c2a18, #b5583a 60%, #d97757);
+    --ik-hero-text: #ffffff;
   }
 }
 
@@ -264,6 +272,8 @@
   --ik-cursor-bg: rgba(0, 0, 0, 0.06);
   --ik-cursor-bar: #0d0d0d;
   --ik-msg-bar: #0d0d0d;
+  --ik-hero: linear-gradient(135deg, #0d0d0d, #3a3a3a);
+  --ik-hero-text: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-inboxkeys-theme="mono"] {
@@ -308,6 +318,8 @@
     --ik-cursor-bg: rgba(255, 255, 255, 0.08);
     --ik-cursor-bar: #ffffff;
     --ik-msg-bar: #ffffff;
+    --ik-hero: linear-gradient(135deg, #2a2a2a, #4a4a4a);
+    --ik-hero-text: #ffffff;
   }
 }
 
@@ -366,6 +378,8 @@
   --ik-cursor-bg: rgba(110, 111, 224, 0.12);
   --ik-cursor-bar: #7b6fe0;
   --ik-msg-bar: #7b6fe0;
+  --ik-hero: linear-gradient(135deg, #4285f4, #7b6fe0 55%, #c56fd6);
+  --ik-hero-text: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-inboxkeys-theme="aurora"] {
@@ -410,6 +424,8 @@
     --ik-cursor-bg: rgba(160, 138, 255, 0.16);
     --ik-cursor-bar: #a08aff;
     --ik-msg-bar: #a08aff;
+    --ik-hero: linear-gradient(135deg, #1f4fbf, #6a5bd6 55%, #a45bc0);
+    --ik-hero-text: #ffffff;
   }
 }
 
@@ -467,6 +483,8 @@
   --ik-cursor-bg: rgba(26, 136, 248, 0.1);
   --ik-cursor-bar: #1a88f8;
   --ik-msg-bar: #1a88f8;
+  --ik-hero: linear-gradient(135deg, #141414, #1a88f8);
+  --ik-hero-text: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-inboxkeys-theme="plush"] {
@@ -511,5 +529,7 @@
     --ik-cursor-bg: rgba(74, 163, 255, 0.14);
     --ik-cursor-bar: #4aa3ff;
     --ik-msg-bar: #4aa3ff;
+    --ik-hero: linear-gradient(135deg, #0a0a0a, #1a6fd0);
+    --ik-hero-text: #ffffff;
   }
 }
