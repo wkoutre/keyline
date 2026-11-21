@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keyline: Gmail Keyboard Shortcuts, Command Palette & Split Inbox",
-  "version": "0.7.15",
+  "version": "0.7.16",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArrdovDMgVX34OzWw9Lcetu+/fjZK2uq8Mnie/IRPxkUNqtxDpOdWgWqmMHVeSGwQqmLfRel/tpcjA/QQ5McIOITvq9luEmE4tVVhS1BOmZpmFsgP+cNzdp+S9D27ooD04KvXd4l8zwurUw/lsMoVfek159EQEMjbjmMWqySEoZ/M4iw2nEJRqK8kybOTxu3IhgiNNHOgnHxfSyNPLLDaKtgvkB/3IRJ+xyrXDVH/XpMWrqOuuBWlmi3wuNlzGmgEUKQH3Wf5Ld8TaViJSfTwVQvxZ++9+Mh+azq0TY3tX6XV7jJS3VBE14CDPUVF83grQyfGCyWmZWEjHglrVgj3eQIDAQAB",
   "description": "Keyboard-first Gmail: Cmd+K palette, shortcuts, split inbox, snooze presets and undo send. Free, open source, never reads your mail.",
   "icons": {
