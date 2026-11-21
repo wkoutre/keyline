@@ -94,7 +94,8 @@ function fakeChrome({ installType = "development", files = {}, flag = true } = {
     const ignore = fs.readFileSync(path.join(root, "..", ".gitignore"), "utf8");
     assert.match(ignore, /extension\/dev-autoreload\.flag/);
     const rel = fs.readFileSync(path.join(root, "release.sh"), "utf8");
-    assert.match(rel, /manifest\.json icons src/, "the store zip holds only manifest, icons and src");
+    assert.match(rel, /zip -r -X "\$OUT" icons src/, "the store zip holds only manifest, icons and src");
+    assert.match(rel, /zip -X "\$ABS_OUT" manifest\.json/, "the manifest goes in from the staged copy");
     const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
     assert.deepEqual(manifest.permissions, ["storage"], "no new permission");
   }
