@@ -6,7 +6,20 @@ body {
   color: var(--ik-text);
 }
 main { max-width: 640px; margin: 0 auto; padding: 32px 24px 64px; }
-h1 { font-size: 22px; margin: 0 0 4px; font-family: var(--ik-font-display); font-weight: var(--ik-title-weight); }
+.page-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 20px 22px; border-radius: calc(var(--ik-radius-md) + 4px);
+}
+.page-head .ik-btn { background: transparent; color: var(--ik-hero-text); border-color: currentColor; }
+.page-head .ik-btn:hover { background: var(--ik-hero-text); color: var(--ik-accent); border-color: transparent; }
+.page-head h1 { margin: 0; font-size: 20px; }
+.page-head .ik-brand-logo { width: 40px; height: 40px; }
+.page-nav { display: flex; gap: 6px; }
+section:target { border-color: var(--ik-accent); box-shadow: 0 0 0 3px var(--ik-accent-ring); }
+.donate { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ik-divider); }
+.donate-head { font-size: 13px; font-weight: 650; }
+.donate .muted { margin: 4px 0 10px; }
+.mono { font-family: var(--ik-font-mono); }
 section {
   background: var(--ik-surface);
   border: 1px solid var(--ik-border);
@@ -122,7 +135,8 @@ kbd {
 .theme-name { font-size: 13px; font-weight: 700; }
 .theme-inspired { font-size: 11px; color: var(--ik-text-subtle); margin-left: 4px; font-weight: 500; }
 .theme-note { font-size: 11px; line-height: 1.35; color: var(--ik-text-muted); }
-input[type="checkbox"] { accent-color: var(--ik-accent); }
+input[type="checkbox"]:not(.ik-switch) { accent-color: var(--ik-accent); }
+.row .ik-switch { margin-left: 16px; }
 .love-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .love-actions a { text-decoration: none; display: inline-flex; align-items: center; }
 .btn-primary {

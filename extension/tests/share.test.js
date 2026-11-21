@@ -187,6 +187,20 @@ const ready = (extra) => ({ shareNudge: { uses: 39, since: Date.now() - 6 * DAY,
     assert.equal(rate.title, "Rate Keyline on the Chrome Web Store");
     rate.run();
     assert.deepEqual(w.__openedWindow, [LINKS.review, "_blank", "noopener"]);
+
+    // Donate opens the settings page at its Support section (PayPal and Zelle).
+    const sent = [];
+    w.chrome.runtime = { sendMessage: (m) => sent.push(m) };
+    const donate = w.InboxKeys.commands.all().find((c) => c.id === "keyline-donate");
+    assert.equal(donate.title, "Donate to Keyline (PayPal or Zelle)");
+    donate.run();
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].type, "inboxkeys:open-options");
+    assert.equal(sent[0].section, "support");
+    // Context gone (extension reloaded under the page): fall back to PayPal.
+    w.chrome.runtime = { sendMessage: () => { throw new Error("Extension context invalidated."); } };
+    donate.run();
+    assert.deepEqual(w.__openedWindow, [LINKS.paypal, "_blank", "noopener"]);
   }
 
   // Popup and options carry the rate/share/feedback links and load links.js.
@@ -194,7 +208,7 @@ const ready = (extra) => ({ shareNudge: { uses: 39, since: Date.now() - 6 * DAY,
     const root = path.resolve(__dirname, "..");
     for (const rel of ["src/popup/popup.html", "src/options/options.html"]) {
       const html = fs.readFileSync(path.join(root, rel), "utf8");
-      for (const k of ["review", "share", "feedback"]) assert.ok(html.includes(`data-ik-link="${k}"`), `${rel} has ${k}`);
+      for (const k of ["review", "share", "feedback", "paypal", "zelle"]) assert.ok(html.includes(`data-ik-link="${k}"`), `${rel} has ${k}`);
       assert.ok(html.includes("../shared/links.js"), rel + " loads links.js");
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));

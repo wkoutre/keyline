@@ -2,29 +2,83 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <title>Keyline</title>
     <link rel="stylesheet" href="../shared/themes.css" />
+    <link rel="stylesheet" href="../shared/brand.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="head">
-      <img src="../../icons/icon32.png" width="22" height="22" alt="" />
-      <div>
-        <div class="title">Keyline</div>
-        <div class="sub" id="account">—</div>
+    <header class="top ik-hero">
+      <div class="ik-brand">
+        <img class="ik-brand-logo" src="../../icons/icon128.png" alt="" />
+        <div class="ik-brand-text">
+          <div class="ik-wordmark">Keyline</div>
+          <div class="ik-brand-sub" id="account">Keyboard-first Gmail</div>
+        </div>
       </div>
+      <label class="master" title="Turn Keyline on or off everywhere">
+        <span id="enabled-label">On</span>
+        <input type="checkbox" class="ik-switch" id="enabled" aria-label="Keyline enabled" />
+      </label>
+    </header>
+
+    <div id="body">
+      <button type="button" class="launcher" id="open-palette">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="launcher-text">Search Gmail commands…</span>
+        <kbd class="ik-kbd" id="palette-key">⌘K</kbd>
+      </button>
+
+      <div class="away" id="away" hidden>
+        <div>
+          <div class="away-title">Keyline works inside Gmail</div>
+          <div class="away-sub">Open your inbox, then press <kbd class="ik-kbd" id="palette-key-2">⌘K</kbd></div>
+        </div>
+        <a class="ik-btn ik-btn-primary" data-ik-link="gmail" target="_blank" rel="noopener">Open Gmail</a>
+      </div>
+
+      <section class="features">
+        <div class="ik-eyebrow">Features</div>
+        <label class="feature">
+          <span class="feature-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 7h1M7 7h2M11 7h1M5 9.8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+          <span class="feature-text"><span class="feature-name">Keyboard shortcuts</span><span class="feature-sub"><kbd class="ik-kbd">j</kbd><kbd class="ik-kbd">k</kbd><kbd class="ik-kbd">e</kbd><kbd class="ik-kbd">r</kbd> and dozens more</span></span>
+          <input type="checkbox" class="ik-switch" id="hotkeysEnabled" />
+        </label>
+        <label class="feature">
+          <span class="feature-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5.5h12M2 5.5V12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 14 12V5.5M2 5.5 3 3h3.5l1 2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+          <span class="feature-text"><span class="feature-name">Split-inbox tabs</span><span class="feature-sub">Tabs over Gmail from any search</span></span>
+          <input type="checkbox" class="ik-switch" id="tabsEnabled" />
+        </label>
+        <div class="quick">
+          <button type="button" class="ik-btn" id="open-tabs">Edit tabs</button>
+          <button type="button" class="ik-btn" id="open-help"><kbd class="ik-kbd">?</kbd> All shortcuts</button>
+          <button type="button" class="ik-btn" id="open-options">Settings</button>
+        </div>
+      </section>
     </div>
 
-    <button class="primary" id="open-palette">Open command palette <kbd id="palette-key">⌘K</kbd></button>
+    <section class="support">
+      <div class="ik-eyebrow">Support Keyline</div>
+      <div class="support-row">
+        <a class="ik-btn" data-ik-link="review" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m8 1.8 1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor"/></svg>Rate</a>
+        <a class="ik-btn" data-ik-link="share" data-ik-copy="share" href="#">Share</a>
+        <a class="ik-btn" data-ik-link="feedback" target="_blank" rel="noopener">Feedback</a>
+        <button type="button" class="ik-btn donate-toggle" id="donate-toggle" aria-expanded="false" aria-controls="donate"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.3-5.5-7.2A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.2C13.5 10.7 8 14 8 14z" fill="currentColor"/></svg>Donate</button>
+      </div>
+      <div class="donate" id="donate" hidden>
+        <p class="donate-text">Keyline is free and always will be. If it saves you time, a tip keeps it going. Thank you!</p>
+        <div class="donate-options">
+          <a class="ik-btn ik-btn-primary" data-ik-link="paypal" target="_blank" rel="noopener">Donate with PayPal</a>
+          <a class="ik-btn zelle" data-ik-link="zelle" data-ik-copy="zelle" href="#" title="Copy the Zelle number">Zelle <span class="zelle-num" id="zelle-num"></span><span class="copy-hint">Copy</span></a>
+        </div>
+      </div>
+    </section>
 
-    <label class="row"><span>Enabled</span><input type="checkbox" id="enabled" /></label>
-    <label class="row"><span>Keyboard shortcuts</span><input type="checkbox" id="hotkeysEnabled" /></label>
-    <label class="row"><span>Split-inbox tabs</span><input type="checkbox" id="tabsEnabled" /></label>
+    <footer class="foot">
+      <span class="note" id="note" role="status"></span>
+      <span class="ver"><span id="version"></span> · <a data-ik-link="repo" target="_blank" rel="noopener">Open source</a></span>
+    </footer>
 
-    <button class="ghost" id="open-tabs">Configure tabs</button>
-    <a class="ghost link" id="open-options" href="#">Settings →</a>
-
-    <p class="note" id="note"></p>
-    <p class="love">Enjoying Keyline? <a data-ik-link="review" target="_blank" rel="noopener">Rate it</a> · <a data-ik-link="share" data-ik-copy="1" href="#">Share</a> · <a data-ik-link="feedback" target="_blank" rel="noopener">Feedback</a></p>
     <script src="../shared/keymap.js"></script>
     <script src="../shared/links.js"></script>
     <script src="../content/storage.js"></script>

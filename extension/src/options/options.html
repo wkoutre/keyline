@@ -2,13 +2,26 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Keyline — Settings</title>
+    <title>Keyline Settings</title>
     <link rel="stylesheet" href="../shared/themes.css" />
+    <link rel="stylesheet" href="../shared/brand.css" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <main>
-      <h1>Keyline — Settings</h1>
+      <header class="page-head ik-hero">
+        <div class="ik-brand">
+          <img class="ik-brand-logo" src="../../icons/icon128.png" alt="" />
+          <div class="ik-brand-text">
+            <h1 class="ik-wordmark">Keyline <span class="ik-wordmark-tag">Settings</span></h1>
+            <div class="ik-brand-sub">Keyboard-first Gmail · <span id="version"></span></div>
+          </div>
+        </div>
+        <nav class="page-nav">
+          <a href="#support" class="ik-btn">Support Keyline</a>
+          <a data-ik-link="repo" target="_blank" rel="noopener" class="ik-btn">GitHub</a>
+        </nav>
+      </header>
 
       <section>
         <h2>General</h2>
@@ -18,12 +31,12 @@
           Account names stay on each computer.
         </p>
         <p class="muted" id="sync-status"></p>
-        <label class="row"><span>Extension enabled</span><input type="checkbox" id="enabled" /></label>
-        <label class="row"><span>Keyboard shortcuts</span><input type="checkbox" id="hotkeysEnabled" /></label>
-        <label class="row"><span>Split-inbox tab bar</span><input type="checkbox" id="tabsEnabled" /></label>
-        <label class="row"><span>Calendar key (0 / 00)</span><input type="checkbox" id="calendarEnabled" /></label>
-        <label class="row" title="Turn this on only if Keyboard shortcuts are on in Gmail's own settings. In an open email, e (archive), # (delete), ! (spam), s (star) and z (undo) then go straight to Gmail instead of Keyline clicking its toolbar."><span>Let Gmail handle e # ! s z in an open email (needs Gmail's own shortcuts on)</span><input type="checkbox" id="gmailNativeShortcuts" /></label>
-        <label class="row"><span>Auto-advance: open the next conversation after archive, delete, snooze, spam or mute</span><input type="checkbox" id="autoAdvance" /></label>
+        <label class="row"><span>Extension enabled</span><input type="checkbox" class="ik-switch" id="enabled" /></label>
+        <label class="row"><span>Keyboard shortcuts</span><input type="checkbox" class="ik-switch" id="hotkeysEnabled" /></label>
+        <label class="row"><span>Split-inbox tab bar</span><input type="checkbox" class="ik-switch" id="tabsEnabled" /></label>
+        <label class="row"><span>Calendar key (0 / 00)</span><input type="checkbox" class="ik-switch" id="calendarEnabled" /></label>
+        <label class="row" title="Turn this on only if Keyboard shortcuts are on in Gmail's own settings. In an open email, e (archive), # (delete), ! (spam), s (star) and z (undo) then go straight to Gmail instead of Keyline clicking its toolbar."><span>Let Gmail handle e # ! s z in an open email (needs Gmail's own shortcuts on)</span><input type="checkbox" class="ik-switch" id="gmailNativeShortcuts" /></label>
+        <label class="row"><span>Auto-advance: open the next conversation after archive, delete, snooze, spam or mute</span><input type="checkbox" class="ik-switch" id="autoAdvance" /></label>
         <div class="km-row palette-key-row">
           <div class="km-title">Open the command palette</div>
           <div id="paletteHotkeyCell" class="km-keys km-editable" title="Click, then press a new shortcut" tabindex="0" role="button"></div>
@@ -84,17 +97,25 @@
         <div id="keymap" class="keymap">Open Gmail once so the command list can load.</div>
       </section>
 
-      <section>
-        <h2>Enjoying Keyline?</h2>
+      <section id="support">
+        <h2>Support Keyline</h2>
         <p class="muted">
           Keyline is free, open source, and made by one developer who reads every
           review and issue. A rating or a share is the best way to help other
           people find it. Found a bug or want a feature? Tell me.
         </p>
         <div class="love-actions">
-          <a class="btn-primary" data-ik-link="review" target="_blank" rel="noopener">Rate on the Chrome Web Store</a>
-          <a class="btn-ghost" data-ik-link="share" data-ik-copy="1" href="#">Copy share link</a>
-          <a class="btn-ghost" data-ik-link="feedback" target="_blank" rel="noopener">Send feedback</a>
+          <a class="ik-btn ik-btn-primary" data-ik-link="review" target="_blank" rel="noopener">Rate on the Chrome Web Store</a>
+          <a class="ik-btn" data-ik-link="share" data-ik-copy="share" href="#">Copy share link</a>
+          <a class="ik-btn" data-ik-link="feedback" target="_blank" rel="noopener">Send feedback</a>
+        </div>
+        <div class="donate">
+          <div class="donate-head">Leave a tip</div>
+          <p class="muted">Keyline is free and always will be. If it saves you time, a tip keeps it going. Thank you!</p>
+          <div class="love-actions">
+            <a class="ik-btn ik-btn-primary" data-ik-link="paypal" target="_blank" rel="noopener">Donate with PayPal</a>
+            <a class="ik-btn" data-ik-link="zelle" data-ik-copy="zelle" href="#" title="Copy the Zelle number">Zelle: <span class="mono" id="zelle-num"></span> (copy)</a>
+          </div>
         </div>
       </section>
 

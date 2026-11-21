@@ -126,6 +126,7 @@ Keyline is free and has no ads, accounts or upsells. If it saves you time:
 - **Share it** with someone who lives in Gmail (Cmd+K, then "Share Keyline" copies the link).
 - **[Open an issue](https://github.com/wkoutre/keyline/issues/new)** for bugs and feature ideas. I read every one and usually ship fixes within days.
 - Star the repo.
+- **Leave a tip** if you'd like: [PayPal](https://www.paypal.com/donate/?business=nick.koutrelakos%40gmail.com&currency_code=USD&item_name=Support%20Keyline) or Zelle to (443) 878-8819. Also in the toolbar popup under Donate.
 
 ## License
 
