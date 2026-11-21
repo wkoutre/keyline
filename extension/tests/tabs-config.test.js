@@ -258,6 +258,23 @@ async function flush() {
     w.close();
   }
 
+  // An orphaned content script (Keyline updated under an open tab) says to reload.
+  {
+    const w = load();
+    const toasts = [];
+    w.InboxKeys.toast = (m) => toasts.push(m);
+    w.InboxKeys.storage.set = async () => { throw new Error("Extension context invalidated."); };
+    const origWarn = console.warn;
+    console.warn = () => {};
+    const modal = openModal(w, "shortcuts");
+    click(w, modal.querySelector(".inboxkeys-cfg-save"));
+    await new Promise((r) => setTimeout(r, 0));
+    console.warn = origWarn;
+    assert.match(toasts.join(" "), /Reload Gmail/, "invalidated context tells the user to reload");
+    assert.ok(w.document.querySelector(".inboxkeys-cfg"), "modal stays open so nothing is lost");
+    w.close();
+  }
+
   // Reduced motion drops the morph and draw animation, not the checkmark.
   {
     const fs = require("node:fs");

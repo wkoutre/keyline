@@ -731,7 +731,14 @@ window.InboxKeys = window.InboxKeys || {};
         console.warn("[Keyline] saving settings failed:", err && err.message);
         delete saveBtn.dataset.state;
         saveBtn.removeAttribute("aria-busy");
-        InboxKeys.toast("Couldn't save settings. Try again.");
+        // After Keyline updates or reloads, this tab's copy loses chrome.storage
+        // ("Extension context invalidated") until the page reloads. Say so,
+        // instead of a Save that silently does nothing.
+        InboxKeys.toast(
+          contextInvalidated(err)
+            ? "Keyline was updated. Reload Gmail, then save again."
+            : "Couldn't save settings. Try again."
+        );
         return;
       }
       rebuild();
@@ -764,6 +771,10 @@ window.InboxKeys = window.InboxKeys || {};
   const CHECK_SVG =
     '<svg class="inboxkeys-cfg-save-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
     '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function contextInvalidated(err) {
+    return !!(err && /context invalidated/i.test(err.message || ""));
+  }
 
   function showSaved(btn) {
     // Pin the current size first so the width can transition to a circle.
