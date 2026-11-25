@@ -30,3 +30,111 @@ jobs:
         run: |
           npm ci --ignore-scripts
           npm test
+
+  # Dependabot intake. Runs only on Dependabot's own PRs, after test passed.
+  # It waits for every other check on the PR (zizmor, outside apps), then
+  # squash-merges the bump if the policy below allows it, or leaves one
+  # comment saying why a person has to look.
+  #
+  # Policy (one place; .github/dependabot.yml says what gets proposed):
+  #   GitHub's own actions (actions/*, github/*)   patch and minor
+  #   extension/ npm (test tooling only)           patch and minor
+  #   other actions, majors                        never: a person reviews them
+  # A third-party action (google-github-actions/auth) runs in the job that
+  # holds the Chrome Web Store sign-in, so it never merges itself.
+  #
+  # The merge is made with this run's token. A push made with GITHUB_TOKEN
+  # starts no workflow, so it never bumps the version or publishes; nothing
+  # in the store zip changes anyway.
+  dependabot:
+    needs: test
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # squash-merge
+      pull-requests: write # comment when a person has to look
+      checks: read # wait for the other checks
+    steps:
+      - name: Check the bump, wait for the other checks, merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+
+          # Only Dependabot's own single, signed commit. Anything else pushed
+          # to its branch makes this a normal PR that a person merges.
+          commits=$(gh api "repos/$GH_REPO/pulls/$PR/commits" --jq 'length')
+          author=$(gh api "repos/$GH_REPO/commits/$SHA" --jq '.author.login // ""')
+          verified=$(gh api "repos/$GH_REPO/commits/$SHA" --jq '.commit.verification.verified')
+          if [ "$commits" != 1 ] || [ "$author" != "dependabot[bot]" ] || [ "$verified" != true ]; then
+            echo "::notice::Not a plain Dependabot commit ($commits commits, author $author, verified $verified); leaving it."
+            exit 0
+          fi
+
+          # The commit message carries Dependabot's metadata block:
+          #   - dependency-name: X / dependency-type: direct:development / update-type: version-update:semver-minor
+          deps=$(gh api "repos/$GH_REPO/commits/$SHA" --jq '.commit.message' | awk '
+            /^- dependency-name:/ { if (n != "") print n "\t" t "\t" u; n = $3; t = ""; u = "" }
+            /^  dependency-type:/ { t = $2 }
+            /^  update-type:/     { u = $2 }
+            END { if (n != "") print n "\t" t "\t" u }' | tr -d '"')
+          if [ -z "$deps" ]; then
+            echo "::notice::No Dependabot metadata in the commit message; leaving it."
+            exit 0
+          fi
+          ecosystem=$(cut -d/ -f2 <<< "$BRANCH")
+
+          refuse=""
+          while IFS=$'\t' read -r name type update; do
+            case "$update" in
+              version-update:semver-patch) level=patch ;;
+              version-update:semver-minor) level=minor ;;
+              *) refuse="$name: ${update:-unknown update type} (majors need a person)"; break ;;
+            esac
+            case "$ecosystem" in
+              github_actions)
+                case "$name" in
+                  actions/*|github/*) ;;
+                  *) refuse="$name: only GitHub's own actions merge themselves"; break ;;
+                esac ;;
+              npm_and_yarn) ;; # nothing from npm ships in the store zip
+              *)
+                refuse="$name: no policy for $ecosystem"; break ;;
+            esac
+          done <<< "$deps"
+
+          if [ -n "$refuse" ]; then
+            echo "::notice::Needs a person: $refuse"
+            marker='<!-- dependabot-intake -->'
+            if ! gh api "repos/$GH_REPO/issues/$PR/comments" --jq '.[].body' | grep -qF "$marker"; then
+              gh pr comment "$PR" --body "$marker
+          This update won't merge itself: $refuse. The policy is the \`dependabot\` job in \`.github/workflows/test.yml\`."
+            fi
+            exit 0
+          fi
+
+          # Tests passed (this job needs it). Wait for every other check on
+          # the commit, then require each to have passed.
+          for _ in $(seq 1 60); do
+            runs=$(gh api "repos/$GH_REPO/commits/$SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name != "dependabot") | {name, status, conclusion}]')
+            [ "$(jq '[.[] | select(.status != "completed")] | length' <<< "$runs")" = 0 ] && break
+            sleep 15
+          done
+          failed=$(jq -r '[.[] | select(.status != "completed" or (.conclusion as $c | ["success", "skipped", "neutral"] | index($c) | not)) | .name] | join(", ")' <<< "$runs")
+          if [ -n "$failed" ]; then
+            echo "::warning::Not merging: these checks did not pass: $failed"
+            exit 0
+          fi
+
+          # --match-head-commit: refuse if anything was pushed since the checks ran.
+          gh pr merge "$PR" --squash --match-head-commit "$SHA"
+          echo "::notice::Merged #$PR ($(tr '\t' ' ' <<< "$deps" | paste -sd ';' -))."

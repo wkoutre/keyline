@@ -1,0 +1,22 @@
+# Update PRs for the actions (pinned to commits) and the test tooling in
+# extension/ (jsdom). The extension itself has no npm dependencies.
+#
+# cooldown: a new upstream release waits a week before its PR, so a bad or
+# hijacked release has time to be caught. Security updates don't wait.
+#
+# Which of these PRs merge themselves: the `dependabot` job in
+# .github/workflows/test.yml.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: npm
+    directory: /extension
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
