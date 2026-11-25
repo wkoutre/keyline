@@ -43,21 +43,39 @@ concurrency:
 #   token when the run is this repository's `publish` job on main in the
 #   `chrome-web-store` environment (see the provider's attribute condition).
 jobs:
-  # Bumps the patch version, commits it to main, and tags it. Pushes made
-  # with GITHUB_TOKEN don't trigger workflows, so this commit doesn't loop.
+  # Bumps the patch version, commits it to main, and tags it. The commit says
+  # [skip ci] (the release bot's pushes would otherwise start workflows), so
+  # it doesn't loop.
   bump:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.bump)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: release-bot # holds the release bot's key; main only
+    env:
+      BOT_CLIENT_ID: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
     permissions:
       contents: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
       sha: ${{ steps.bump.outputs.sha }}
     steps:
+      # The release bot is a GitHub App that the "main: review" and "main:
+      # checks" rulesets let push to main; GITHUB_TOKEN can't be a bypass actor
+      # on a personal account's repo. Until its secrets exist (in the
+      # release-bot environment, main only) this falls back to GITHUB_TOKEN.
+      - name: Release bot token
+        id: bot
+        if: env.BOT_CLIENT_ID != ''
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ env.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+          token: ${{ steps.bot.outputs.token || github.token }}
           persist-credentials: true # zizmor: ignore[artipacked] this job pushes the bump commit
 
       - name: Bump, commit, and push
@@ -73,7 +91,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add extension/manifest.json extension/package.json extension/package-lock.json
-          git commit -m "Release v${version}"
+          git commit -m "Release v${version} [skip ci]"
           git tag "v${version}"
           # Someone may have pushed while this ran; replay on top and retry once.
           if ! git push --atomic origin HEAD:main "v${version}"; then
