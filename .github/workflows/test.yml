@@ -43,8 +43,8 @@ jobs:
   # A third-party action (google-github-actions/auth) runs in the job that
   # holds the Chrome Web Store sign-in, so it never merges itself.
   #
-  # The merge is made with this run's token. A push made with GITHUB_TOKEN
-  # starts no workflow, so it never bumps the version or publishes; nothing
+  # The merge is made with the release bot's token and says [skip ci], so it
+  # starts no workflow: it never bumps the version or publishes; nothing
   # in the store zip changes anyway.
   dependabot:
     needs: test
@@ -55,16 +55,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write # squash-merge
+      contents: write # squash-merge (fallback when the release bot isn't set up)
       pull-requests: write # comment when a person has to look
       checks: read # wait for the other checks
+    env:
+      # Dependabot's runs read Dependabot secrets, not Actions secrets.
+      BOT_CLIENT_ID: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
     steps:
+      # The merge needs the release bot: it is the only non-person the
+      # "main: review" ruleset lets merge without an approval. Falls back to
+      # GITHUB_TOKEN until the bot's secrets exist.
+      - name: Release bot token
+        id: bot
+        if: env.BOT_CLIENT_ID != ''
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ env.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write # GitHub Actions bumps edit workflow files
+
       - name: Check the bump, wait for the other checks, merge
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
@@ -136,5 +154,8 @@ jobs:
           fi
 
           # --match-head-commit: refuse if anything was pushed since the checks ran.
-          gh pr merge "$PR" --squash --match-head-commit "$SHA"
+          # [skip ci]: like a GITHUB_TOKEN merge, this starts no workflow on main,
+          # so a dependency bump never cuts a release on its own.
+          GH_TOKEN="$MERGE_TOKEN" gh pr merge "$PR" --squash --match-head-commit "$SHA" \
+            --body "Merged by the dependabot job in .github/workflows/test.yml. [skip ci]"
           echo "::notice::Merged #$PR ($(tr '\t' ' ' <<< "$deps" | paste -sd ';' -))."
